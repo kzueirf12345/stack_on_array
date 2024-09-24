@@ -6,8 +6,8 @@
 
 #include "logger.h"
 
-#define START_LOGGING_LINE "========START LOGGING======="
-#define END_LOGGING_LINE   "=========END LOGGING========"
+// #define START_LOGGING_LINE "========START LOGGING======="
+// #define END_LOGGING_LINE   "=========END LOGGING========"
 
 enum LogCode log_write(const char* const log_name_str, const char* const format, 
                       const char* const func_name, const char* const filename, const int line_num,
@@ -21,7 +21,9 @@ static struct
     unsigned output_flags;
     const char* logout_name;
     FILE* logout;
-} LOGGER = {.output_flags = LOG_LEVEL_DETAILS_ZERO, .logout_name = NULL, .logout = NULL};
+    bool is_used;
+} LOGGER = {.output_flags = LOG_LEVEL_DETAILS_ZERO, .logout_name = NULL, .logout = NULL,
+            .is_used = false};
 
 static void LOGGER_is_init_asserts(void)
 {
@@ -43,15 +45,13 @@ enum LogCode logger_ctor(void)
 
     LOGGER.output_flags = LOG_LEVEL_DETAILS_INFO;
 
-
-    fprintf(LOGGER.logout, "\n" START_LOGGING_LINE "\n\n");
-
     return LOG_CODE_SUCCES;
 }
 
 enum LogCode logger_dtor(void)
 {
-    fprintf(LOGGER.logout, "\n" END_LOGGING_LINE "\n");
+    if (LOGGER.is_used)
+        fprintf(LOGGER.logout, "\n");
 
 
     LOGGER.output_flags = LOG_LEVEL_DETAILS_ZERO;
@@ -85,7 +85,7 @@ enum LogCode logger_set_logout_file(const char* const filename)
     assert(filename);
 
     if (LOGGER.logout)
-        fprintf(LOGGER.logout, "\n" END_LOGGING_LINE "\n");
+        fprintf(LOGGER.logout,  "\n");
 
     LOGGER.logout_name = filename;
 
@@ -100,7 +100,6 @@ enum LogCode logger_set_logout_file(const char* const filename)
         return LOG_CODE_FAILURE;
     }
     
-    fprintf(LOGGER.logout, "\n" START_LOGGING_LINE "\n\n");
     
     return LOG_CODE_SUCCES;
 }
@@ -161,6 +160,8 @@ enum LogCode log_write(const char* const log_name_str, const char* const format,
     assert(func_name);
     assert(filename);
 
+    LOGGER.is_used = true;
+
     const time_t current_time = time(NULL);
     const struct tm * const current_local_time = localtime(&current_time);
     char current_time_str[MAX_TIME_STR_LEN_] = {};
@@ -213,9 +214,7 @@ enum LogCode log_lassert(const char* const format, const char* const func_name,
         perror("vprintf error");
         return LOG_CODE_FAILURE;
     }
-    fprintf(stderr, "\n");
-    
-    // fprintf(LOGGER.logout, "\n" END_LOGGING_LINE "\n");
+    // fprintf(stderr, "\n");
 
     return LOG_CODE_SUCCES;
 }
