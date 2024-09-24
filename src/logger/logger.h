@@ -34,7 +34,7 @@ enum LogCode internal_func_log(const char* const func_name, const int line_num,
                                const char* const format, ...);
 
 #define logg(log_level_details, format, ...)                                                       \
-            internal_func_log(func, LINE, FILE, log_level_details, format,             \
+            internal_func_log(__func__, __LINE__, __FILE__, log_level_details, format,      \
                               ##__VA_ARGS__)
 
 
@@ -45,8 +45,10 @@ enum LogCode internal_func_log(const char* const func_name, const int line_num,
             {                                                                                      \
                 if(!(check))                                                                       \
                 {                                                                                  \
-                    internal_func_log(func, LINE, FILE, LOG_LEVEL_DETAILS_ERROR,       \
-                                      #check, ##__VA_ARGS__);                                      \
+                    internal_func_log(__func__, __LINE__, __FILE__, LOG_LEVEL_DETAILS_ERROR,       \
+                                      ##__VA_ARGS__);                                              \
+                    if (logger_dtor())                                                             \
+                        fprintf(stderr, "Can't destroy logger\n");                                 \
                     assert(0);                                                                     \
                 }                                                                                  \
             } while(0)

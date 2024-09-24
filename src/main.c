@@ -9,7 +9,7 @@ int main()
         fprintf(stderr, "Can't init logger\n");
         return EXIT_FAILURE;
     }
-    if (logger_set_level_details(LOG_LEVEL_DETAILS_ZERO))
+    if (logger_set_level_details(LOG_LEVEL_DETAILS_ALL))
     {
         fprintf(stderr, "Can't set logger level details\n");
         return EXIT_FAILURE;
@@ -17,7 +17,10 @@ int main()
 
     //----------------------------------------------------------
 
-    
+    stack_t stack = {};
+    stack_ctor(&stack, 0);
+
+    stack_dtor(&stack);
 
     //----------------------------------------------------------
 
