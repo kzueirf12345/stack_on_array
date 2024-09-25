@@ -15,10 +15,12 @@ static_assert(LOG_CODE_SUCCES == 0);
 
 enum LogLevelDetails
 {
-    LOG_LEVEL_DETAILS_ZERO  = 0b000u,
-    LOG_LEVEL_DETAILS_INFO  = 0b001u,
-    LOG_LEVEL_DETAILS_ERROR = 0b010u,
-    LOG_LEVEL_DETAILS_ALL   = 0b011u,
+    LOG_LEVEL_DETAILS_ZERO    = 0b0000u,
+    LOG_LEVEL_DETAILS_INFO    = 0b0001u,
+    LOG_LEVEL_DETAILS_ERROR   = 0b0010u,
+    LOG_LEVEL_DETAILS_LASSERT = 0b0100u,
+    LOG_LEVEL_DETAILS_DUMB    = 0b1000u,
+    LOG_LEVEL_DETAILS_ALL     = 0b1111u,
 };
 
 
@@ -31,31 +33,53 @@ enum LogCode logger_set_logout_file(const char * const filename);
 
 enum LogCode internal_func_log(const char* const func_name, const int line_num, 
                                const char* const filename, enum LogLevelDetails level_details,
+                               const bool check, const char* const check_str,
                                const char* const format, ...);
 
-#define logg(log_level_details, format, ...)                                                       \
-            internal_func_log(__func__, __LINE__, __FILE__, log_level_details, format,      \
-                              ##__VA_ARGS__)
+#define logg(log_level_details, format, ...)                                                        \
+        do                                                                                          \
+        {                                                                                           \
+            if (internal_func_log(__func__, __LINE__, __FILE__, log_level_details, true, NULL,      \
+                                  format, ##__VA_ARGS__) != LOG_CODE_SUCCES)                        \
+                fprintf(stderr, "Can't log smth\n");                                                \
+        } while (0)
 
 
 #ifndef NDEBUG
+// REVIEW - maybe add local assert macro or smth
+#define lassert(check, ...)                                                                         \
+        do                                                                                          \
+        {                                                                                           \
+            if(!(check))                                                                            \
+            {                                                                                       \
+                if (internal_func_log(__func__, __LINE__, __FILE__,                                 \
+                                      LOG_LEVEL_DETAILS_LASSERT | LOG_LEVEL_DETAILS_ERROR,          \
+                                      false, #check, ##__VA_ARGS__) != LOG_CODE_SUCCES)             \
+                    fprintf(stderr, "Can't log smth\n");                                            \
+                if (logger_dtor())                                                                  \
+                    fprintf(stderr, "Can't destroy logger\n");                                      \
+                assert(0);                                                                          \
+            }                                                                                       \
+        } while(0)
 
-#define lassert(check, ...)                                                                        \
-            do                                                                                     \
-            {                                                                                      \
-                if(!(check))                                                                       \
-                {                                                                                  \
-                    internal_func_log(__func__, __LINE__, __FILE__, LOG_LEVEL_DETAILS_ERROR,       \
-                                      ##__VA_ARGS__);                                              \
-                    if (logger_dtor())                                                             \
-                        fprintf(stderr, "Can't destroy logger\n");                                 \
-                    assert(0);                                                                     \
-                }                                                                                  \
-            } while(0)
+#define nlassert(check, ...)                                                                        \
+        do                                                                                          \
+        {                                                                                           \
+            if(!(check))                                                                            \
+            {                                                                                       \
+                if (internal_func_log(__func__, __LINE__, __FILE__, LOG_LEVEL_DETAILS_LASSERT,      \
+                                      false, #check, ##__VA_ARGS__) != LOG_CODE_SUCCES)             \
+                    fprintf(stderr, "Can't log smth\n");                                            \
+                if (logger_dtor())                                                                  \
+                    fprintf(stderr, "Can't destroy logger\n");                                      \
+                assert(0);                                                                          \
+            }                                                                                       \
+        } while(0) 
 
 #else /*NDEBUG*/
 
-#define lassert(check, format, ...) do {} while(0)
+#define  lassert(check, format, ...) do {} while(0)
+#define nlassert(check, format, ...) do {} while(0)
 
 #endif /*NDEBUG*/
 

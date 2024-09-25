@@ -2,6 +2,9 @@
 
 #include "stack/stack_funcs.h"
 
+
+//TODO check ded's texlib for crossplatform log (__file__ and other)
+
 int main()
 {
     if (logger_ctor())
@@ -17,7 +20,7 @@ int main()
 
     //----------------------------------------------------------
 
-    stack_t stack = {};
+    stack_t stack = { STACK_INIT(stack) };
     stack_ctor(&stack, 0);
 
     stack_dtor(&stack);
