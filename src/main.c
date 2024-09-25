@@ -1,6 +1,8 @@
 #include <stdio.h>
 
+#include "logger/logger.h"
 #include "stack/stack_funcs.h"
+#include "stack/verification/verification.h"
 
 
 //TODO check ded's texlib for crossplatform log (__file__ and other)
@@ -21,7 +23,18 @@ int main()
     //----------------------------------------------------------
 
     stack_t stack = { STACK_INIT(stack) };
-    stack_ctor(&stack, 0);
+    stack_ctor(&stack, 10);
+
+    const enum StackError stack_push_error = stack_push(&stack, 123);
+    if (stack_push_error != STACK_ERROR_SUCCESS) // REVIEW I don't like this handle-method
+    {
+        if (fprintf(stderr, "Can't stack push. STACK_ERROR: %s", stack_strerror(stack_push_error))
+            <= 0)
+        {
+            fprintf(stderr, "Can't fprintf stack_error\n");
+        }
+        return -1;
+    }
 
     stack_dtor(&stack);
 

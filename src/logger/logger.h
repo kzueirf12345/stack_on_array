@@ -28,7 +28,7 @@ enum LogCode logger_ctor(void);
 enum LogCode logger_dtor(void);
 
 enum LogCode logger_set_level_details(const unsigned level_details);
-enum LogCode logger_set_logout_file(const char * const filename);
+enum LogCode logger_set_logout_file(const char* const filename);
 
 
 enum LogCode internal_func_log(const char* const func_name, const int line_num, 

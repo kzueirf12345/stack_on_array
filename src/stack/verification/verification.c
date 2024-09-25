@@ -33,8 +33,7 @@ enum StackError stack_verify_func(const stack_t* const stack)
 const char* stack_strerror(const enum StackError error)
 {
     
-#define CASE_ENUM_TO_STRING_(error) \
-        case error: return #error
+#define CASE_ENUM_TO_STRING_(error) case error: return #error
 
     switch(error)
     {
@@ -60,26 +59,26 @@ const char* stack_strerror(const enum StackError error)
 #ifndef NDEBUG
 
 //TODO - mprotect
-enum StackError stack_dumb_func(stack_t* const stack, const char* file, const char* func, int line)
+enum StackError stack_dumb_func(stack_t* const stack, const char* file, const char* func,
+                                const int line)
 {
-#define logg_and_fprintf_(format, ...)                                                              \
+#define LOGG_AND_FPRINTF_(format, ...)                                                              \
         do {                                                                                        \
         logg(LOG_LEVEL_DETAILS_DUMB, format, ##__VA_ARGS__);                                        \
         if (fprintf(stderr, format "\n", ##__VA_ARGS__) < 0)                                        \
             return STACK_ERROR_STANDART_ERRNO;                                                      \
         } while(0)
 
-    logg_and_fprintf_("==STACK DUMB==");
+    LOGG_AND_FPRINTF_("==STACK DUMB==");
 
-#define NULL_STR_TO_UNKNOWN_(str) \
-        if (!str) str = "UNKNOWN"
+#define NULL_STR_TO_UNKNOWN_(str) if (!str) str = "UNKNOWN"
 
     NULL_STR_TO_UNKNOWN_(file);
     NULL_STR_TO_UNKNOWN_(func);
 
     if (!stack)
     {
-        logg_and_fprintf_("stack_t [NULL] at %s:%d (%s())", file, line, func);
+        LOGG_AND_FPRINTF_("stack_t [NULL] at %s:%d (%s())", file, line, func);
         fprintf(stderr, "\n");
         return STACK_ERROR_SUCCESS;
     }
@@ -90,25 +89,25 @@ enum StackError stack_dumb_func(stack_t* const stack, const char* file, const ch
 
 #undef NULL_STR_TO_UNKNOWN_
 
-    logg_and_fprintf_("stack_t %s[%p] at %s:%d (%s()) bUUUrn at %s:%d (%s())",
+    LOGG_AND_FPRINTF_("stack_t %s[%p] at %s:%d (%s()) bUUUrn at %s:%d (%s())",
                      stack->name, stack,
                      file, line, func,
                      stack->file_burn, stack->line_burn, stack->func_burn);
 
-    logg_and_fprintf_("{");
-    logg_and_fprintf_("\tsize     = %zu", stack->size);
-    logg_and_fprintf_("\tcapacity = %zu", stack->capacity);
+    LOGG_AND_FPRINTF_("{");
+    LOGG_AND_FPRINTF_("\tsize     = %zu", stack->size);
+    LOGG_AND_FPRINTF_("\tcapacity = %zu", stack->capacity);
 
     if (!stack->data)
     {
-        logg_and_fprintf_("\tdata[NULL]");
-        logg_and_fprintf_("}");
+        LOGG_AND_FPRINTF_("\tdata[NULL]");
+        LOGG_AND_FPRINTF_("}");
         fprintf(stderr, "\n");
         return STACK_ERROR_SUCCESS;
     }
 
-    logg_and_fprintf_("\tdata[%p]", stack->data);
-    logg_and_fprintf_("\t{");
+    LOGG_AND_FPRINTF_("\tdata[%p]", stack->data);
+    LOGG_AND_FPRINTF_("\t{");
 
     size_t ind_count = min(stack->size, min(stack->capacity, 100));
 
@@ -116,18 +115,18 @@ enum StackError stack_dumb_func(stack_t* const stack, const char* file, const ch
     for (size_t ind = 0; ind < ind_count; ++ind)
     {
         if (ind < stack->size)
-            logg_and_fprintf_("\t\t*[%-3zu] = %d", ind, stack->data[ind]);
+            LOGG_AND_FPRINTF_("\t\t*[%-3zu] = %d", ind, stack->data[ind]);
         else
-            logg_and_fprintf_("\t\t [%-3zu] = %d", ind, stack->data[ind]);
+            LOGG_AND_FPRINTF_("\t\t [%-3zu] = %d", ind, stack->data[ind]);
     }
 
-    logg_and_fprintf_("\t}");   
+    LOGG_AND_FPRINTF_("\t}");   
 
-    logg_and_fprintf_("}");    
+    LOGG_AND_FPRINTF_("}");    
     fprintf(stderr, "\n");
     return STACK_ERROR_SUCCESS;
 
-#undef logg_and_fprintf
+#undef LOGG_AND_FPRINTF_
 }
 
 #endif /*NDEBUG*/

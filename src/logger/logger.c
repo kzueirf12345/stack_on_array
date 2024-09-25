@@ -19,7 +19,7 @@ static struct
 } LOGGER = {.output_flags = LOG_LEVEL_DETAILS_ZERO, .logout_name = NULL, .logout = NULL,
             .is_used = false};
 
-static void LOGGER_is_init_asserts(void)
+static void LOGGER_is_init_asserts_(void)
 {
     assert(LOGGER.logout && "LOGGER is not init");
     assert(LOGGER.logout_name && "LOGGER is not init");
@@ -65,7 +65,7 @@ enum LogCode logger_dtor(void)
 
 enum LogCode logger_set_level_details(const unsigned level_details)
 {
-    LOGGER_is_init_asserts();
+    LOGGER_is_init_asserts_();
     assert((level_details <= LOG_LEVEL_DETAILS_ALL) && "Incorrect level details flag");
 
     LOGGER.output_flags = level_details;
@@ -75,7 +75,7 @@ enum LogCode logger_set_level_details(const unsigned level_details)
 
 enum LogCode logger_set_logout_file(const char* const filename)
 {
-    LOGGER_is_init_asserts();
+    LOGGER_is_init_asserts_();
     assert(filename);
 
     if (LOGGER.logout)
@@ -100,16 +100,17 @@ enum LogCode logger_set_logout_file(const char* const filename)
 
 
 
-enum LogCode log_write(const char* const log_name_str,
+static enum LogCode log_write_(const char* const log_name_str,
                        const char* const func_name, const char* const filename, const int line_num,
                        const bool check, const char* const check_str,
                        const char* const format, va_list* const args);
 
-enum LogCode log_lassert(const char* const func_name, const char* const filename,const int line_num,
-                         const bool check, const char* const check_str,
-                         const char* const format, va_list* const args);
+static enum LogCode log_lassert_(const char* const func_name, const char* const filename,
+                                 const int line_num,
+                                 const bool check, const char* const check_str,
+                                 const char* const format, va_list* const args);
 
-enum LogCode log_dumb(const char* const format, va_list* const args);
+static enum LogCode log_dumb_(const char* const format, va_list* const args);
 
 
 enum LogCode internal_func_log(const char* const func_name, const int line_num, 
@@ -117,7 +118,7 @@ enum LogCode internal_func_log(const char* const func_name, const int line_num,
                                const bool check, const char* const check_str,
                                const char* const format, ...)
 {
-    LOGGER_is_init_asserts();
+    LOGGER_is_init_asserts_();
     assert(func_name);
     assert(filename);
 
@@ -127,7 +128,7 @@ enum LogCode internal_func_log(const char* const func_name, const int line_num,
     //REVIEW - copypaste
     if (LOGGER.output_flags & LOG_LEVEL_DETAILS_INFO & level_details)
     {
-        if (log_write("LOG_INFO", func_name, filename, line_num, check, check_str, format, &args)
+        if (log_write_("LOG_INFO", func_name, filename, line_num, check, check_str, format, &args)
             == LOG_CODE_FAILURE)
         {  
             fprintf(stderr, "log_info error\n");
@@ -136,7 +137,7 @@ enum LogCode internal_func_log(const char* const func_name, const int line_num,
     }
     else if(LOGGER.output_flags & LOG_LEVEL_DETAILS_ERROR & level_details)
     {
-        if (log_write("LOG_ERROR", func_name, filename, line_num, check, check_str, format, &args)
+        if (log_write_("LOG_ERROR", func_name, filename, line_num, check, check_str, format, &args)
             == LOG_CODE_FAILURE)
         {  
             fprintf(stderr, "log_error error\n");
@@ -145,7 +146,7 @@ enum LogCode internal_func_log(const char* const func_name, const int line_num,
     }
     else if(LOGGER.output_flags & LOG_LEVEL_DETAILS_DUMB & level_details)
     {
-        if (log_dumb(format, &args) != LOG_CODE_SUCCES)
+        if (log_dumb_(format, &args) != LOG_CODE_SUCCES)
         {
             fprintf(stderr, "log_dumb error\n");
             return LOG_CODE_FAILURE;
@@ -156,7 +157,7 @@ enum LogCode internal_func_log(const char* const func_name, const int line_num,
     {
         va_start(args, format);
 
-        if (log_lassert(func_name, filename, line_num, check, check_str, format, &args)
+        if (log_lassert_(func_name, filename, line_num, check, check_str, format, &args)
             == LOG_CODE_FAILURE)
         {
             perror("log_lassert error");
@@ -169,14 +170,15 @@ enum LogCode internal_func_log(const char* const func_name, const int line_num,
 }
 
 
-enum LogCode log_additional_topic(const char* const log_name_str);
+static enum LogCode log_additional_topic_(const char* const log_name_str);
 
-enum LogCode log_write(const char* const log_name_str,
-                       const char* const func_name, const char* const filename, const int line_num,
-                       const bool check, const char* const check_str,
-                       const char* const format, va_list* const args)
+static enum LogCode log_write_(const char* const log_name_str,
+                               const char* const func_name, const char* const filename, 
+                               const int line_num,
+                               const bool check, const char* const check_str,
+                               const char* const format, va_list* const args)
 {
-    LOGGER_is_init_asserts();
+    LOGGER_is_init_asserts_();
     assert(log_name_str);
     assert(format);
     assert(args);
@@ -185,7 +187,7 @@ enum LogCode log_write(const char* const log_name_str,
 
     LOGGER.is_used = true;
 
-    if (log_additional_topic(log_name_str) != LOG_CODE_SUCCES)
+    if (log_additional_topic_(log_name_str) != LOG_CODE_SUCCES)
     {
         fprintf(stderr, "Can't logging addintional topic\n");
         return LOG_CODE_FAILURE;
@@ -219,11 +221,12 @@ enum LogCode log_write(const char* const log_name_str,
 }
 
 
-enum LogCode log_lassert(const char* const func_name, const char* const filename,const int line_num,
-                         const bool check, const char* const check_str,
-                         const char* const format, va_list* const args)
+static enum LogCode log_lassert_(const char* const func_name, const char* const filename,
+                                 const int line_num,
+                                 const bool check, const char* const check_str,
+                                 const char* const format, va_list* const args)
 {
-    LOGGER_is_init_asserts();
+    LOGGER_is_init_asserts_();
     assert(format);
     assert(args);
     assert(func_name);
@@ -254,15 +257,15 @@ enum LogCode log_lassert(const char* const func_name, const char* const filename
     return LOG_CODE_SUCCES;
 }
 
-enum LogCode log_dumb(const char* const format, va_list* const args)
+static enum LogCode log_dumb_(const char* const format, va_list* const args)
 {
-    LOGGER_is_init_asserts();
+    LOGGER_is_init_asserts_();
     assert(format);
     assert(args);
 
     LOGGER.is_used = true;
 
-    if (log_additional_topic("LOG_DUMP") != LOG_CODE_SUCCES)
+    if (log_additional_topic_("LOG_DUMP") != LOG_CODE_SUCCES)
     {
         fprintf(stderr, "Can't logging addintional topic\n");
         return LOG_CODE_FAILURE;
@@ -280,9 +283,9 @@ enum LogCode log_dumb(const char* const format, va_list* const args)
 }
 
 #define MAX_TIME_STR_SIZE_ 64
-enum LogCode log_additional_topic(const char* const log_name_str)
+static enum LogCode log_additional_topic_(const char* const log_name_str)
 {
-    LOGGER_is_init_asserts();
+    LOGGER_is_init_asserts_();
     assert(log_name_str);
 
     const time_t current_time = time(NULL);

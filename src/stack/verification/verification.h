@@ -24,14 +24,15 @@ enum StackError
 static_assert(STACK_ERROR_SUCCESS == 0);
 
 
-enum StackError stack_verify_func(const stack_t* const stack);
-
 const char* stack_strerror(const enum StackError error);
 
-enum StackError stack_dumb_func(stack_t* const stack, const char* file, const char* func, int line);
-
-
 #ifndef NDEBUG
+
+enum StackError stack_verify_func(const stack_t* const stack);
+
+enum StackError stack_dumb_func(stack_t* const stack, const char* file, const char* func,
+                                const int line);
+
 
 #define STACK_VERIFY(stack)                                                                        \
     do                                                                                             \
