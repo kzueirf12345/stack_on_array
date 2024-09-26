@@ -108,7 +108,7 @@ static enum LogCode log_write_(const char* const log_name_str,
 static enum LogCode log_lassert_(const place_in_code_t place_in_code, const char* const check_str,
                                  const char* const format, va_list* const args);
 
-
+// ahah, sorry, idk how do it otherwise. I want sleep
 #define LOG_WRITE_WITH_MODS_(level_details, log_mode_str, place_in_code_ptr)                        \
         if (active_levels & level_details)                                                          \
         {                                                                                           \
@@ -216,7 +216,7 @@ static enum LogCode log_write_(const char* const log_name_str,
         assert(place_in_code->file);
         assert(place_in_code->func);
         assert(place_in_code->line);
-        if (fprintf(LOGGER.logout, "%s:%d (%s()):  ",
+        if (fprintf(LOGGER.logout, "%s:%-4d (%s()):  ",
                     place_in_code->file, place_in_code->line, place_in_code->func) <= 0)
         {  
             perror("fprintf error");
@@ -255,7 +255,7 @@ static enum LogCode log_lassert_(const place_in_code_t place_in_code, const char
     assert(place_in_code.func);
     assert(place_in_code.line);
 
-    if (fprintf(stderr, "LASSERT ERROR. %s:%d (%s()):\n",
+    if (fprintf(stderr, "LASSERT ERROR. %s:%-4d (%s()):\n",
                 place_in_code.file, place_in_code.line, place_in_code.func) <= 0)
     {  
         perror("fprintf error");

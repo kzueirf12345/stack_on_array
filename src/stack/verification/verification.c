@@ -1,17 +1,61 @@
 #include <errno.h>
+#include <unistd.h>
+#include <fcntl.h>
+// #include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
 
 #include "verification.h"
+
 
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 
+
+enum PtrState
+{
+    PTR_STATES_VALID   = 0,
+    PTR_STATES_NULL    = 1,
+    PTR_STATES_INVALID = 2,
+    PTR_STATES_ERROR   = 3
+};
+static_assert(PTR_STATES_VALID == 0);
+
+static enum PtrState is_valid_ptr_(const void* ptr);
+
 enum StackError stack_verify_func(const stack_t* const stack)
 {
-    if (!stack)
+    switch (is_valid_ptr_(stack))
+    {
+    case PTR_STATES_VALID:
+        break;
+    case PTR_STATES_NULL:
         return STACK_ERROR_STACK_IS_NULL;
+    case PTR_STATES_INVALID:
+        return STACK_ERROR_STACK_IS_INVALID;
+    case PTR_STATES_ERROR:
+        return STACK_ERROR_STANDART_ERRNO;
+    
+    default:
+        fprintf(stderr, "Unknown PtrState enum, it's soooo bad\n");
+        return STACK_ERROR_UNKNOWN;
+    }
 
-    if (!stack->data)
-        return STACK_ERROR_DATA_IS_NULL;
+    switch (is_valid_ptr_(stack->data))
+    {
+    case PTR_STATES_VALID:
+        break;
+    case PTR_STATES_NULL:
+        return STACK_ERROR_STACK_IS_NULL;
+    case PTR_STATES_INVALID:
+        return STACK_ERROR_STACK_IS_INVALID;
+    case PTR_STATES_ERROR:
+        return STACK_ERROR_STANDART_ERRNO;
+    
+    default:
+        fprintf(stderr, "Unknown PtrState enum, it's soooo bad\n");
+        return STACK_ERROR_UNKNOWN;
+    }
 
     if (stack->size > STACK_MAX_SIZE_VALUE)
         return STACK_ERROR_SIZE_OVERFLOW;
@@ -36,15 +80,17 @@ const char* stack_strerror(const enum StackError error)
     {
         CASE_ENUM_TO_STRING_(STACK_ERROR_SUCCESS);
         CASE_ENUM_TO_STRING_(STACK_ERROR_DATA_IS_NULL);
+        CASE_ENUM_TO_STRING_(STACK_ERROR_DATA_IS_INVALID);
         CASE_ENUM_TO_STRING_(STACK_ERROR_SIZE_GREATER_CAPACITY);
         CASE_ENUM_TO_STRING_(STACK_ERROR_SIZE_OVERFLOW);
         CASE_ENUM_TO_STRING_(STACK_ERROR_CAPACITY_OVERFLOW);
         CASE_ENUM_TO_STRING_(STACK_ERROR_STACK_IS_NULL);
+        CASE_ENUM_TO_STRING_(STACK_ERROR_STACK_IS_INVALID);
         CASE_ENUM_TO_STRING_(STACK_ERROR_STANDART_ERRNO);
         CASE_ENUM_TO_STRING_(STACK_ERROR_UNKNOWN);
 
         default: 
-            fprintf(stderr, "unknown STACK_ERROR enum, it's soooo bad\n");
+            fprintf(stderr, "Unknown StackError enum, it's soooo bad\n");
             return NULL;
     }
 
@@ -64,32 +110,50 @@ const char* stack_strerror(const enum StackError error)
             return STACK_ERROR_STANDART_ERRNO;                                                      \
         } while(0)
 
-#define INIT_CONST_BUF_CHECK_POISON_(buf_name, check_val, poison_val)                               \
-        const typeof(check_val) buf_name = !(check_val) ? (poison_val) : (check_val)
+#define INIT_CONST_BUF_CHECK_STR_(buf_name, check_str)                                              \
+        const char* buf_name = NULL;                                                                \
+        switch (is_valid_ptr_(check_str))                                                           \
+        {                                                                                           \
+        case PTR_STATES_VALID:                                                                      \
+            buf_name = (const char*)check_str;                                                      \
+            break;                                                                                  \
+        case PTR_STATES_NULL:                                                                       \
+            buf_name = "NULL";                                                                      \
+            break;                                                                                  \
+        case PTR_STATES_INVALID:                                                                    \
+            buf_name = "INVALID";                                                                   \
+            break;                                                                                  \
+        case PTR_STATES_ERROR:                                                                      \
+            buf_name = "ERROR";                                                                     \
+            break;                                                                                  \
+        default:                                                                                    \
+            buf_name = "UNKNOWN";                                                                   \
+            break;                                                                                  \
+        }
 
 enum StackError stack_dumb_func(const stack_t* const stack, place_in_code_t place_in_code)
 {
     LOGG_AND_FPRINTF_("==STACK DUMB==");
 
-    INIT_CONST_BUF_CHECK_POISON_(file_buf,  place_in_code.file, "UNKNOWN");
-    INIT_CONST_BUF_CHECK_POISON_(func_buf,  place_in_code.func, "UNKNOWN");
-    const int                    line_buf = place_in_code.line <= 0
-                                            ? CODE_LINE_POISON
-                                            : place_in_code.line;
+    INIT_CONST_BUF_CHECK_STR_(file_buf,  place_in_code.file);
+    INIT_CONST_BUF_CHECK_STR_(func_buf,  place_in_code.func);
+    const int                 line_buf = place_in_code.line <= 0
+                                         ? CODE_LINE_POISON
+                                         : place_in_code.line;
 
     if (!stack)
     {
         LOGG_AND_FPRINTF_("stack_t [NULL] at %s:%d (%s())", file_buf, line_buf, func_buf);
         fprintf(stderr, "\n");
-        return STACK_ERROR_SUCCESS;
+        return STACK_ERROR_STACK_IS_NULL;
     }
 
-    INIT_CONST_BUF_CHECK_POISON_(stack_name_buf     ,  stack->name           , "UNKNOWN");
-    INIT_CONST_BUF_CHECK_POISON_(stack_file_burn_buf,  stack->place_burn.file, "UNKNOWN");
-    INIT_CONST_BUF_CHECK_POISON_(stack_func_burn_buf,  stack->place_burn.func, "UNKNOWN");
-    const int                    stack_line_burn_buf = stack->place_burn.line <= 0
-                                                       ? CODE_LINE_POISON
-                                                       : stack->place_burn.line;
+    INIT_CONST_BUF_CHECK_STR_(stack_name_buf     ,  stack->name           );
+    INIT_CONST_BUF_CHECK_STR_(stack_file_burn_buf,  stack->place_burn.file);
+    INIT_CONST_BUF_CHECK_STR_(stack_func_burn_buf,  stack->place_burn.func);
+    const int                 stack_line_burn_buf = stack->place_burn.line <= 0
+                                                    ? CODE_LINE_POISON
+                                                    : stack->place_burn.line;
 
 
     LOGG_AND_FPRINTF_("stack_t %s[%p] at %s:%d (%s()) bUUUrn at %s:%d (%s())",
@@ -106,7 +170,7 @@ enum StackError stack_dumb_func(const stack_t* const stack, place_in_code_t plac
         LOGG_AND_FPRINTF_("\tdata[NULL]");
         LOGG_AND_FPRINTF_("}");
         fprintf(stderr, "\n");
-        return STACK_ERROR_SUCCESS;
+        return STACK_ERROR_DATA_IS_NULL;
     }
 
     LOGG_AND_FPRINTF_("\tdata[%p]", stack->data);
@@ -130,5 +194,30 @@ enum StackError stack_dumb_func(const stack_t* const stack, place_in_code_t plac
 }
 #undef LOGG_AND_FPRINTF_
 #undef INIT_CONST_BUF_CHECK_POISON_
+
+static enum PtrState is_valid_ptr_(const void* ptr)
+{
+    if (!ptr) return PTR_STATES_NULL;
+
+    // const char* filename = "/tmp/chicha_bombino.txt";
+
+    FILE* file = tmpfile();
+    if (!file)
+    {
+        perror("Can't tmpfile file in is_valid_ptr()");
+        return PTR_STATES_ERROR;
+    }
+
+    if (!fwrite(ptr, 1, 1, file))
+        return PTR_STATES_INVALID;
+
+    if (fclose(file))
+    {
+        perror("Can't fclose file in is_valid_ptr()");
+        return PTR_STATES_ERROR;
+    }
+
+    return PTR_STATES_VALID;
+}
 
 #endif /*NDEBUG*/

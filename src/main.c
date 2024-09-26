@@ -21,7 +21,7 @@ int main()
     //----------------------------------------------------------
 
     stack_t stack = { STACK_INIT(stack) };
-    stack_ctor(&stack, 3);
+    stack_ctor(&stack, 0);
 
     for (stack_elem_t stack_elem = 0; stack_elem < 100; ++stack_elem)
     {
