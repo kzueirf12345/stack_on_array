@@ -26,23 +26,24 @@ static_assert(STACK_ERROR_SUCCESS == 0);
 
 const char* stack_strerror(const enum StackError error);
 
+
 #ifndef NDEBUG
 
 enum StackError stack_verify_func(const stack_t* const stack);
 
-enum StackError stack_dumb_func(stack_t* const stack, const char* file, const char* func,
-                                const int line);
+enum StackError stack_dumb_func(const stack_t* const stack, place_in_code_t place_in_code);
 
 
-#define STACK_VERIFY(stack)                                                                        \
-    do                                                                                             \
-    {                                                                                              \
-        const enum StackError verify_error = stack_verify_func(stack);                             \
-        if (verify_error)                                                                          \
-        {                                                                                          \
-            stack_dumb_func(stack, __FILE__, __func__, __LINE__);                                  \
-            lassert(false, "stack error: %s", stack_strerror(verify_error));                       \
-        }                                                                                          \
+#define STACK_VERIFY(stack)                                                                         \
+    do                                                                                              \
+    {                                                                                               \
+        const enum StackError verify_error = stack_verify_func(stack);                              \
+        if (verify_error)                                                                           \
+        {                                                                                           \
+            stack_dumb_func(stack, (place_in_code_t)                                                \
+                                   { .file = __FILE__, .func = __func__, .line = __LINE__ });       \
+            lassert(false, "stack error: %s", stack_strerror(verify_error));                        \
+        }                                                                                           \
     } while (0)
 
 #else  /*NDEBUG*/

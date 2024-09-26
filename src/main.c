@@ -5,8 +5,6 @@
 #include "stack/verification/verification.h"
 
 
-//TODO check ded's texlib for crossplatform log (__file__ and other)
-
 int main()
 {
     if (logger_ctor())
@@ -23,17 +21,39 @@ int main()
     //----------------------------------------------------------
 
     stack_t stack = { STACK_INIT(stack) };
-    stack_ctor(&stack, 10);
+    stack_ctor(&stack, 3);
 
-    const enum StackError stack_push_error = stack_push(&stack, 123);
-    if (stack_push_error != STACK_ERROR_SUCCESS) // REVIEW I don't like this handle-method
+    for (stack_elem_t stack_elem = 0; stack_elem < 100; ++stack_elem)
     {
-        if (fprintf(stderr, "Can't stack push. STACK_ERROR: %s", stack_strerror(stack_push_error))
-            <= 0)
+        const enum StackError stack_push_error = stack_push(&stack, stack_elem);
+        if (stack_push_error != STACK_ERROR_SUCCESS)
         {
-            fprintf(stderr, "Can't fprintf stack_error\n");
+            if (logger_dtor())
+                fprintf(stderr, "Can't destroy logger\n");
+            stack_dtor(&stack);
+            fprintf(stderr, "Can't stack push. STACK_ERROR: %s", stack_strerror(stack_push_error));
+            return EXIT_FAILURE;
         }
-        return -1;
+    }
+
+    // stack.data = NULL;
+
+    for (stack_elem_t stack_elem = 0; stack_elem < 100; ++stack_elem)
+    {
+        printf("%-3d. ", stack_elem);
+        printf("stack_back: %-3d ", stack_back(stack));
+
+        stack_elem_t stack_pop_elem = 0;
+        const enum StackError stack_pop_error = stack_pop(&stack, &stack_pop_elem);
+        if (stack_pop_error != STACK_ERROR_SUCCESS)
+        {
+            if (logger_dtor())
+                fprintf(stderr, "Can't destroy logger\n");
+            stack_dtor(&stack);
+            fprintf(stderr, "Can't stack push. STACK_ERROR: %s", stack_strerror(stack_pop_error));
+            return EXIT_FAILURE;
+        }
+        printf("stack_pop: %-3d\n", stack_pop_elem);
     }
 
     stack_dtor(&stack);

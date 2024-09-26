@@ -39,7 +39,7 @@ enum LogCode logger_ctor(void)
 
     LOGGER.output_flags = LOG_LEVEL_DETAILS_INFO;
 
-    return LOG_CODE_SUCCES;
+    return LOG_CODE_SUCCESS;
 }
 
 enum LogCode logger_dtor(void)
@@ -59,7 +59,7 @@ enum LogCode logger_dtor(void)
     }
     LOGGER.logout = NULL;
 
-    return LOG_CODE_SUCCES;
+    return LOG_CODE_SUCCESS;
 }
 
 
@@ -70,7 +70,7 @@ enum LogCode logger_set_level_details(const unsigned level_details)
 
     LOGGER.output_flags = level_details;
 
-    return LOG_CODE_SUCCES;
+    return LOG_CODE_SUCCESS;
 }
 
 enum LogCode logger_set_logout_file(const char* const filename)
@@ -95,70 +95,90 @@ enum LogCode logger_set_logout_file(const char* const filename)
     }
     
     
-    return LOG_CODE_SUCCES;
+    return LOG_CODE_SUCCESS;
 }
 
 
 
 static enum LogCode log_write_(const char* const log_name_str,
-                       const char* const func_name, const char* const filename, const int line_num,
-                       const bool check, const char* const check_str,
-                       const char* const format, va_list* const args);
+                               const place_in_code_t* const place_in_code,
+                               const char* const check_str,
+                               const char* const format, va_list* const args);
 
-static enum LogCode log_lassert_(const char* const func_name, const char* const filename,
-                                 const int line_num,
-                                 const bool check, const char* const check_str,
+static enum LogCode log_lassert_(const place_in_code_t place_in_code, const char* const check_str,
                                  const char* const format, va_list* const args);
 
-static enum LogCode log_dumb_(const char* const format, va_list* const args);
 
+#define LOG_WRITE_WITH_MODS_(level_details, log_mode_str, place_in_code_ptr)                        \
+        if (active_levels & level_details)                                                          \
+        {                                                                                           \
+            if (log_write_(log_mode_str, place_in_code_ptr, check_str, format, &args)               \
+                == LOG_CODE_FAILURE)                                                                \
+            {                                                                                       \
+                fprintf(stderr, log_mode_str " error\n");                                           \
+                return LOG_CODE_FAILURE;                                                            \
+            }                                                                                       \
+            break;                                                                                  \
+        } do {} while(0)
 
-enum LogCode internal_func_log(const char* const func_name, const int line_num, 
-                               const char* const filename, enum LogLevelDetails level_details,
-                               const bool check, const char* const check_str,
-                               const char* const format, ...)
+enum LogCode internal_func_log_(const place_in_code_t place_in_code,
+                                enum LogLevelDetails level_details, // NOTE - NOT RENAME THIS
+                                const char* const check_str,
+                                const char* const format, ...)
 {
     LOGGER_is_init_asserts_();
-    assert(func_name);
-    assert(filename);
+    assert(place_in_code.file);
+    assert(place_in_code.func);
+    assert(place_in_code.line);
 
     va_list args = {};
     va_start(args, format);
 
-    //REVIEW - copypaste
-    if (LOGGER.output_flags & LOG_LEVEL_DETAILS_INFO & level_details)
+    // NOTE - NOT RENAME THIS
+    const unsigned active_levels = LOGGER.output_flags & level_details;
+
+    do
     {
-        if (log_write_("LOG_INFO", func_name, filename, line_num, check, check_str, format, &args)
-            == LOG_CODE_FAILURE)
-        {  
-            fprintf(stderr, "log_info error\n");
-            return LOG_CODE_FAILURE;
-        }
-    }
-    else if(LOGGER.output_flags & LOG_LEVEL_DETAILS_ERROR & level_details)
-    {
-        if (log_write_("LOG_ERROR", func_name, filename, line_num, check, check_str, format, &args)
-            == LOG_CODE_FAILURE)
-        {  
-            fprintf(stderr, "log_error error\n");
-            return LOG_CODE_FAILURE;
-        }
-    }
-    else if(LOGGER.output_flags & LOG_LEVEL_DETAILS_DUMB & level_details)
-    {
-        if (log_dumb_(format, &args) != LOG_CODE_SUCCES)
-        {
-            fprintf(stderr, "log_dumb error\n");
-            return LOG_CODE_FAILURE;
-        }
-    }
+        LOG_WRITE_WITH_MODS_(LOG_LEVEL_DETAILS_INFO , "LOG_INFO" , &place_in_code);
+        LOG_WRITE_WITH_MODS_(LOG_LEVEL_DETAILS_ERROR, "LOG_ERROR", &place_in_code);
+        LOG_WRITE_WITH_MODS_(LOG_LEVEL_DETAILS_DUMB , "LOG_DUMB" , NULL);
+    } while (0);
+    
+
+    // NOTE - copypaste version
+    // if (LOGGER.output_flags & LOG_LEVEL_DETAILS_INFO & level_details)
+    // {
+    //     if (log_write_("LOG_INFO", &place_in_code, check_str, format, &args)
+    //         == LOG_CODE_FAILURE)
+    //     {  
+    //         fprintf(stderr, "log_info error\n");
+    //         return LOG_CODE_FAILURE;
+    //     }
+    // }
+    // else if(LOGGER.output_flags & LOG_LEVEL_DETAILS_ERROR & level_details)
+    // {
+    //     if (log_write_("LOG_ERROR", &place_in_code, check_str, format, &args)
+    //         == LOG_CODE_FAILURE)
+    //     {  
+    //         fprintf(stderr, "log_error error\n");
+    //         return LOG_CODE_FAILURE;
+    //     }
+    // }
+    // else if(LOGGER.output_flags & LOG_LEVEL_DETAILS_DUMB & level_details)
+    // {
+    //     if (log_write_("LOG_DUMB", NULL, check_str, format, &args)
+    //         == LOG_CODE_FAILURE)
+    //     {  
+    //         fprintf(stderr, "log_dumb error\n");
+    //         return LOG_CODE_FAILURE;
+    //     }
+    // }
 
     if(LOGGER.output_flags & LOG_LEVEL_DETAILS_LASSERT & level_details)
     {
         va_start(args, format);
 
-        if (log_lassert_(func_name, filename, line_num, check, check_str, format, &args)
-            == LOG_CODE_FAILURE)
+        if (log_lassert_(place_in_code, check_str, format, &args) == LOG_CODE_FAILURE)
         {
             perror("log_lassert error");
             return LOG_CODE_FAILURE;
@@ -166,41 +186,45 @@ enum LogCode internal_func_log(const char* const func_name, const int line_num,
     }
 
     va_end(args);
-    return LOG_CODE_SUCCES;
+    return LOG_CODE_SUCCESS;
 }
+#undef LOG_WRITE_WITH_MODS_
 
 
 static enum LogCode log_additional_topic_(const char* const log_name_str);
 
 static enum LogCode log_write_(const char* const log_name_str,
-                               const char* const func_name, const char* const filename, 
-                               const int line_num,
-                               const bool check, const char* const check_str,
+                               const place_in_code_t* const place_in_code,
+                               const char* const check_str,
                                const char* const format, va_list* const args)
 {
     LOGGER_is_init_asserts_();
     assert(log_name_str);
     assert(format);
     assert(args);
-    assert(func_name);
-    assert(filename);
 
     LOGGER.is_used = true;
 
-    if (log_additional_topic_(log_name_str) != LOG_CODE_SUCCES)
+    if (log_additional_topic_(log_name_str) != LOG_CODE_SUCCESS)
     {
         fprintf(stderr, "Can't logging addintional topic\n");
         return LOG_CODE_FAILURE;
     }
 
-
-    if (fprintf(LOGGER.logout, "%s:%d (%s()):  ", filename, line_num, func_name) <= 0)
-    {  
-        perror("fprintf error");
-        return LOG_CODE_FAILURE;
+    if (place_in_code)
+    {
+        assert(place_in_code->file);
+        assert(place_in_code->func);
+        assert(place_in_code->line);
+        if (fprintf(LOGGER.logout, "%s:%d (%s()):  ",
+                    place_in_code->file, place_in_code->line, place_in_code->func) <= 0)
+        {  
+            perror("fprintf error");
+            return LOG_CODE_FAILURE;
+        }
     }
 
-    if (!check)
+    if (check_str)
     {
         if (fprintf(LOGGER.logout, "lassert(%s);  ", check_str) <= 0)
         {  
@@ -217,28 +241,28 @@ static enum LogCode log_write_(const char* const log_name_str,
     
     fprintf(LOGGER.logout, "\n");
 
-    return LOG_CODE_SUCCES;
+    return LOG_CODE_SUCCESS;
 }
 
 
-static enum LogCode log_lassert_(const char* const func_name, const char* const filename,
-                                 const int line_num,
-                                 const bool check, const char* const check_str,
+static enum LogCode log_lassert_(const place_in_code_t place_in_code, const char* const check_str,
                                  const char* const format, va_list* const args)
 {
     LOGGER_is_init_asserts_();
     assert(format);
     assert(args);
-    assert(func_name);
-    assert(filename);
+    assert(place_in_code.file);
+    assert(place_in_code.func);
+    assert(place_in_code.line);
 
-    if (fprintf(stderr, "LASSERT ERROR. %s:%d (%s()):\n", filename, line_num, func_name) <= 0)
+    if (fprintf(stderr, "LASSERT ERROR. %s:%d (%s()):\n",
+                place_in_code.file, place_in_code.line, place_in_code.func) <= 0)
     {  
         perror("fprintf error");
         return LOG_CODE_FAILURE;
     }
 
-    if (!check)
+    if (check_str)
     {
         if (fprintf(stderr, "lassert(%s);  ", check_str) <= 0)
         {  
@@ -254,33 +278,9 @@ static enum LogCode log_lassert_(const char* const func_name, const char* const 
     }
     fprintf(stderr, "\n\n");
 
-    return LOG_CODE_SUCCES;
+    return LOG_CODE_SUCCESS;
 }
 
-static enum LogCode log_dumb_(const char* const format, va_list* const args)
-{
-    LOGGER_is_init_asserts_();
-    assert(format);
-    assert(args);
-
-    LOGGER.is_used = true;
-
-    if (log_additional_topic_("LOG_DUMP") != LOG_CODE_SUCCES)
-    {
-        fprintf(stderr, "Can't logging addintional topic\n");
-        return LOG_CODE_FAILURE;
-    }
-
-    if (vfprintf(LOGGER.logout, format, *args) < 0)
-    {  
-        perror("vprintf error");
-        return LOG_CODE_FAILURE;
-    }
-    
-    fprintf(LOGGER.logout, "\n");
-
-    return LOG_CODE_SUCCES;
-}
 
 #define MAX_TIME_STR_SIZE_ 64
 static enum LogCode log_additional_topic_(const char* const log_name_str)
@@ -297,12 +297,12 @@ static enum LogCode log_additional_topic_(const char* const log_name_str)
         return LOG_CODE_FAILURE;
     }
 
-    if (fprintf(LOGGER.logout, "%-12sLOGGER.logout, %s. ", log_name_str, current_time_str) <= 0)
+    if (fprintf(LOGGER.logout, "%-12s, %s. ", log_name_str, current_time_str) <= 0)
     {  
         perror("fprintf error");
         return LOG_CODE_FAILURE;
     }
 
-    return LOG_CODE_SUCCES;
+    return LOG_CODE_SUCCESS;
 }
 #undef MAX_TIME_STR_SIZE_

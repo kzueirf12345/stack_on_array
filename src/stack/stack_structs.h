@@ -3,16 +3,15 @@
 
 #include <stdlib.h>
 
+#include "../logger/logger.h"
 
-typedef int stack_elem_t; // REVIEW
+typedef int stack_elem_t;
 
 typedef struct stack_t
 {
 #ifndef NDEBUG
-    const char* name;
-    const char* file_burn;
-    const char* func_burn;
-    int line_burn;
+    const char* const name;
+    place_in_code_t place_burn;
 #endif /*NDEBUG*/
 
     stack_elem_t* data;
@@ -23,7 +22,8 @@ typedef struct stack_t
 
 #ifndef NDEBUG
 
-#define STACK_INIT(name) #name, __FILE__, __func__, __LINE__
+#define STACK_INIT(name)                                                                            \
+        #name, (place_in_code_t){ .file = __FILE__, .func = __func__, .line = __LINE__ }
 
 #else  /*NDEBUG*/
 

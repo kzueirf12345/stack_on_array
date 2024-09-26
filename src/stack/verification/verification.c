@@ -2,8 +2,8 @@
 
 #include "verification.h"
 
-#define max(a, b) (((a) > (b)) ? (a) : (b))
-#define min(a, b) (((a) < (b)) ? (a) : (b))
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
 
 enum StackError stack_verify_func(const stack_t* const stack)
 {
@@ -29,12 +29,9 @@ enum StackError stack_verify_func(const stack_t* const stack)
     return STACK_ERROR_SUCCESS;
 }
 
-
+#define CASE_ENUM_TO_STRING_(error) case error: return #error
 const char* stack_strerror(const enum StackError error)
 {
-    
-#define CASE_ENUM_TO_STRING_(error) case error: return #error
-
     switch(error)
     {
         CASE_ENUM_TO_STRING_(STACK_ERROR_SUCCESS);
@@ -51,17 +48,15 @@ const char* stack_strerror(const enum StackError error)
             return NULL;
     }
 
-#undef CASE_ENUM_TO_STRING
-
     return NULL;
 }
+#undef CASE_ENUM_TO_STRING_
+
 
 #ifndef NDEBUG
 
 //TODO - mprotect
-enum StackError stack_dumb_func(stack_t* const stack, const char* file, const char* func,
-                                const int line)
-{
+// NOTE - fuck this shit
 #define LOGG_AND_FPRINTF_(format, ...)                                                              \
         do {                                                                                        \
         logg(LOG_LEVEL_DETAILS_DUMB, format, ##__VA_ARGS__);                                        \
@@ -69,30 +64,38 @@ enum StackError stack_dumb_func(stack_t* const stack, const char* file, const ch
             return STACK_ERROR_STANDART_ERRNO;                                                      \
         } while(0)
 
+#define INIT_CONST_BUF_CHECK_POISON_(buf_name, check_val, poison_val)                               \
+        const typeof(check_val) buf_name = !(check_val) ? (poison_val) : (check_val)
+
+enum StackError stack_dumb_func(const stack_t* const stack, place_in_code_t place_in_code)
+{
     LOGG_AND_FPRINTF_("==STACK DUMB==");
 
-#define NULL_STR_TO_UNKNOWN_(str) if (!str) str = "UNKNOWN"
-
-    NULL_STR_TO_UNKNOWN_(file);
-    NULL_STR_TO_UNKNOWN_(func);
+    INIT_CONST_BUF_CHECK_POISON_(file_buf,  place_in_code.file, "UNKNOWN");
+    INIT_CONST_BUF_CHECK_POISON_(func_buf,  place_in_code.func, "UNKNOWN");
+    const int                    line_buf = place_in_code.line <= 0
+                                            ? CODE_LINE_POISON
+                                            : place_in_code.line;
 
     if (!stack)
     {
-        LOGG_AND_FPRINTF_("stack_t [NULL] at %s:%d (%s())", file, line, func);
+        LOGG_AND_FPRINTF_("stack_t [NULL] at %s:%d (%s())", file_buf, line_buf, func_buf);
         fprintf(stderr, "\n");
         return STACK_ERROR_SUCCESS;
     }
 
-    NULL_STR_TO_UNKNOWN_(stack->name);
-    NULL_STR_TO_UNKNOWN_(stack->file_burn);
-    NULL_STR_TO_UNKNOWN_(stack->func_burn);
+    INIT_CONST_BUF_CHECK_POISON_(stack_name_buf     ,  stack->name           , "UNKNOWN");
+    INIT_CONST_BUF_CHECK_POISON_(stack_file_burn_buf,  stack->place_burn.file, "UNKNOWN");
+    INIT_CONST_BUF_CHECK_POISON_(stack_func_burn_buf,  stack->place_burn.func, "UNKNOWN");
+    const int                    stack_line_burn_buf = stack->place_burn.line <= 0
+                                                       ? CODE_LINE_POISON
+                                                       : stack->place_burn.line;
 
-#undef NULL_STR_TO_UNKNOWN_
 
     LOGG_AND_FPRINTF_("stack_t %s[%p] at %s:%d (%s()) bUUUrn at %s:%d (%s())",
-                     stack->name, stack,
-                     file, line, func,
-                     stack->file_burn, stack->line_burn, stack->func_burn);
+                     stack_name_buf, stack,
+                     file_buf, line_buf, func_buf,
+                     stack_file_burn_buf, stack_line_burn_buf, stack_func_burn_buf);
 
     LOGG_AND_FPRINTF_("{");
     LOGG_AND_FPRINTF_("\tsize     = %zu", stack->size);
@@ -109,8 +112,7 @@ enum StackError stack_dumb_func(stack_t* const stack, const char* file, const ch
     LOGG_AND_FPRINTF_("\tdata[%p]", stack->data);
     LOGG_AND_FPRINTF_("\t{");
 
-    size_t ind_count = min(stack->size, min(stack->capacity, 100));
-
+    size_t ind_count = MIN(stack->size, MIN(stack->capacity, 100));
 
     for (size_t ind = 0; ind < ind_count; ++ind)
     {
@@ -125,8 +127,8 @@ enum StackError stack_dumb_func(stack_t* const stack, const char* file, const ch
     LOGG_AND_FPRINTF_("}");    
     fprintf(stderr, "\n");
     return STACK_ERROR_SUCCESS;
-
-#undef LOGG_AND_FPRINTF_
 }
+#undef LOGG_AND_FPRINTF_
+#undef INIT_CONST_BUF_CHECK_POISON_
 
 #endif /*NDEBUG*/
