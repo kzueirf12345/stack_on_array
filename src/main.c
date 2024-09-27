@@ -36,8 +36,6 @@ int main()
         }
     }
 
-    // stack.data = NULL;
-
     for (stack_elem_t stack_elem = 0; stack_elem < 100; ++stack_elem)
     {
         printf("%-3d. ", stack_elem);
@@ -55,6 +53,8 @@ int main()
         }
         printf("stack_pop: %-3d\n", stack_pop_elem);
     }
+
+
 
     stack_dtor(&stack);
 

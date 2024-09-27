@@ -101,7 +101,7 @@ const char* stack_strerror(const enum StackError error)
 
 #ifndef NDEBUG
 
-//TODO - mprotect
+
 // NOTE - fuck this shit
 #define LOGG_AND_FPRINTF_(format, ...)                                                              \
         do {                                                                                        \
@@ -115,7 +115,7 @@ const char* stack_strerror(const enum StackError error)
         switch (is_valid_ptr_(check_str))                                                           \
         {                                                                                           \
         case PTR_STATES_VALID:                                                                      \
-            buf_name = (const char*)check_str;                                                      \
+            buf_name = NULL;                                                                        \
             break;                                                                                  \
         case PTR_STATES_NULL:                                                                       \
             buf_name = "NULL";                                                                      \
@@ -135,15 +135,18 @@ enum StackError stack_dumb_func(const stack_t* const stack, place_in_code_t plac
 {
     LOGG_AND_FPRINTF_("==STACK DUMB==");
 
-    INIT_CONST_BUF_CHECK_STR_(file_buf,  place_in_code.file);
-    INIT_CONST_BUF_CHECK_STR_(func_buf,  place_in_code.func);
+    INIT_CONST_BUF_CHECK_STR_(stack_buf, stack);
+    INIT_CONST_BUF_CHECK_STR_(file_buf , place_in_code.file);
+    INIT_CONST_BUF_CHECK_STR_(func_buf , place_in_code.func);
+    file_buf = file_buf ? file_buf : place_in_code.file;
+    func_buf = func_buf ? func_buf : place_in_code.func;
     const int                 line_buf = place_in_code.line <= 0
                                          ? CODE_LINE_POISON
                                          : place_in_code.line;
 
-    if (!stack)
+    if (stack_buf)
     {
-        LOGG_AND_FPRINTF_("stack_t [NULL] at %s:%d (%s())", file_buf, line_buf, func_buf);
+        LOGG_AND_FPRINTF_("stack_t [%s] at %s:%d (%s())", stack_buf, file_buf, line_buf, func_buf);
         fprintf(stderr, "\n");
         return STACK_ERROR_STACK_IS_NULL;
     }
@@ -151,9 +154,12 @@ enum StackError stack_dumb_func(const stack_t* const stack, place_in_code_t plac
     INIT_CONST_BUF_CHECK_STR_(stack_name_buf     ,  stack->name           );
     INIT_CONST_BUF_CHECK_STR_(stack_file_burn_buf,  stack->place_burn.file);
     INIT_CONST_BUF_CHECK_STR_(stack_func_burn_buf,  stack->place_burn.func);
-    const int                 stack_line_burn_buf = stack->place_burn.line <= 0
-                                                    ? CODE_LINE_POISON
-                                                    : stack->place_burn.line;
+    stack_name_buf      = stack_name_buf      ? stack_name_buf      : stack->name;
+    stack_file_burn_buf = stack_file_burn_buf ? stack_file_burn_buf : stack->place_burn.file;
+    stack_func_burn_buf = stack_func_burn_buf ? stack_func_burn_buf : stack->place_burn.func;
+    const int             stack_line_burn_buf = stack->place_burn.line <= 0
+                                                ? CODE_LINE_POISON
+                                                : stack->place_burn.line;
 
 
     LOGG_AND_FPRINTF_("stack_t %s[%p] at %s:%d (%s()) bUUUrn at %s:%d (%s())",
@@ -165,9 +171,10 @@ enum StackError stack_dumb_func(const stack_t* const stack, place_in_code_t plac
     LOGG_AND_FPRINTF_("\tsize     = %zu", stack->size);
     LOGG_AND_FPRINTF_("\tcapacity = %zu", stack->capacity);
 
-    if (!stack->data)
+    INIT_CONST_BUF_CHECK_STR_(stack_data_buf, stack->data);
+    if (stack_data_buf)
     {
-        LOGG_AND_FPRINTF_("\tdata[NULL]");
+        LOGG_AND_FPRINTF_("\tdata[%s]", stack_data_buf);
         LOGG_AND_FPRINTF_("}");
         fprintf(stderr, "\n");
         return STACK_ERROR_DATA_IS_NULL;
@@ -195,28 +202,23 @@ enum StackError stack_dumb_func(const stack_t* const stack, place_in_code_t plac
 #undef LOGG_AND_FPRINTF_
 #undef INIT_CONST_BUF_CHECK_POISON_
 
+
 static enum PtrState is_valid_ptr_(const void* ptr)
 {
     if (!ptr) return PTR_STATES_NULL;
 
-    // const char* filename = "/tmp/chicha_bombino.txt";
+    int fd = open(ptr, 0, 0);
 
-    FILE* file = tmpfile();
-    if (!file)
+    if (fd == -1 && errno == EFAULT)
     {
-        perror("Can't tmpfile file in is_valid_ptr()");
-        return PTR_STATES_ERROR;
-    }
-
-    if (!fwrite(ptr, 1, 1, file))
+        errno = 0;
         return PTR_STATES_INVALID;
-
-    if (fclose(file))
-    {
-        perror("Can't fclose file in is_valid_ptr()");
-        return PTR_STATES_ERROR;
     }
-
+    else if (fd != -1 && close(fd) == -1)
+        return PTR_STATES_ERROR;
+    else 
+        errno = 0;
+        
     return PTR_STATES_VALID;
 }
 
