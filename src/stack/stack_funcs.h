@@ -7,8 +7,8 @@
 void stack_ctor(stack_t* const stack, const size_t elem_size, const size_t start_capacity);
 void stack_dtor(stack_t* const stack);
 
-enum StackError stack_push(stack_t* stack, const void* const elem);
-enum StackError stack_pop(stack_t* stack, void* const elem);
-void* stack_back(const stack_t stack);
+enum StackError stack_push(stack_t* const stack, const void* const elem);
+enum StackError stack_pop (stack_t* const stack, void* const elem);
+enum StackError stack_back(const stack_t  stack, void* const elem);
 
 #endif /*SRC_STACK_H*/

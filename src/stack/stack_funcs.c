@@ -39,7 +39,7 @@ void stack_dtor(stack_t* const stack)
 
 static enum StackError stack_resize_(stack_t* stack);
 
-enum StackError stack_push(stack_t* stack, const void* const elem)
+enum StackError stack_push(stack_t* const stack, const void* const elem)
 {
     STACK_VERIFY(stack);
     lassert(elem, "");
@@ -127,7 +127,7 @@ static void* recalloc_(void* ptrmem, const size_t old_number, const size_t numbe
 }
 
 
-enum StackError stack_pop(stack_t* stack, void* const elem)
+enum StackError stack_pop(stack_t* const stack, void* const elem)
 {
     STACK_VERIFY(stack);
     lassert(stack->size > 0, "");
@@ -159,10 +159,18 @@ enum StackError stack_pop(stack_t* stack, void* const elem)
 }
 
 
-void* stack_back(const stack_t stack)
+enum StackError stack_back(const stack_t stack, void* const elem)
 {
     STACK_VERIFY(&stack);
     lassert(stack.size > 0, "");
+    lassert(elem          , "");
 
-    return (char*)stack.data + (stack.size - 1) * stack.elem_size;
+    if(!memcpy(elem, (char*)stack.data + (stack.size - 1) * stack.elem_size, stack.elem_size))
+    {
+        perror("Can't stack_back elem with memcpy");
+        return STACK_ERROR_STANDART_ERRNO;
+    }
+
+    STACK_VERIFY(&stack);
+    return STACK_ERROR_SUCCESS;
 }

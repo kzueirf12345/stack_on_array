@@ -39,7 +39,20 @@ int main()
     for (int stack_elem = 0; stack_elem < 10; ++stack_elem)
     {
         printf("%-3d. ", stack_elem);
-        printf("stack_back: %-3d ", *(int*)stack_back(stack));
+        printf("stack_data[]: %-3d ",
+               *(int*)((char*)stack.data + (9 - (size_t)stack_elem) * stack.elem_size));
+               
+        int stack_back_elem = 0;
+        const enum StackError stack_back_error = stack_back(stack, &stack_back_elem);
+        if (stack_back_error != STACK_ERROR_SUCCESS)
+        {
+            if (logger_dtor())
+                    fprintf(stderr, "Can't destroy logger\n");
+            stack_dtor(&stack);
+            fprintf(stderr, "Can't stack push. STACK_ERROR: %s", stack_strerror(stack_back_error));
+            return EXIT_FAILURE;
+        }
+        printf("stack_back: %-3d ", stack_back_elem);
 
         int stack_pop_elem = 0;
         const enum StackError stack_pop_error = stack_pop(&stack, &stack_pop_elem);
