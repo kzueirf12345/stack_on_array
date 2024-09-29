@@ -27,8 +27,10 @@ enum StackError
 #ifdef   PENGUIN_PROTECT
     STACK_ERROR_STACK_PENGUIN_LEFT        = 11,
     STACK_ERROR_STACK_PENGUIN_RIGHT       = 12,
+    STACK_ERROR_DATA_PENGUIN_LEFT         = 13,
+    STACK_ERROR_DATA_PENGUIN_RIGHT        = 14,
 #endif /*PENGUIN_PROTECT*/
-    STACK_ERROR_UNKNOWN                   = 13
+    STACK_ERROR_UNKNOWN                   = 15
 };
 static_assert(STACK_ERROR_SUCCESS == 0);
 

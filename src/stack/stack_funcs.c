@@ -9,7 +9,7 @@
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 
 
-void stack_ctor(stack_t* const stack, const size_t elem_size, const size_t start_capacity)
+enum StackError stack_ctor(stack_t* const stack, const size_t elem_size, const size_t start_capacity)
 {
     lassert(stack    , "");
     lassert(elem_size, "");
@@ -21,9 +21,25 @@ void stack_ctor(stack_t* const stack, const size_t elem_size, const size_t start
     stack->elem_size = elem_size;
     stack->capacity = start_capacity;
     stack->size = 0;
-    stack->data = calloc(start_capacity, elem_size);
+    stack->data = calloc(1, stack->elem_size * stack->capacity IF_PENGUIN(+ 2 * PENGUIN_SIZE));
+    
+#ifdef PENGUIN_PROTECT
+    const PENGUIN_TYPE PENGUIN_bump = PENGUIN_CONTROL;
+    if (!memcpy((char*)stack->data, &PENGUIN_bump, PENGUIN_SIZE))
+    {
+        perror("Can't memcpy left PENGUIN");
+        return STACK_ERROR_STANDART_ERRNO;
+    }
+    stack->data = (char*)stack->data + 1 * PENGUIN_SIZE;
+    if (!memcpy((char*)stack->data + stack->capacity * stack->elem_size, &PENGUIN_bump, PENGUIN_SIZE))
+    {
+        perror("Can't memcpy right PENGUIN");
+        return STACK_ERROR_STANDART_ERRNO;
+    }
+#endif /*PENGUIN_PROTECT*/
     
     STACK_VERIFY(stack);
+    return STACK_ERROR_SUCCESS;
 }
 
 void stack_dtor(stack_t* const stack)
@@ -33,6 +49,7 @@ void stack_dtor(stack_t* const stack)
     stack->capacity = 0;
     stack->size = 0;
     stack->elem_size = 0;
+    IF_PENGUIN(stack->data = (char*)stack->data - 1 * PENGUIN_SIZE;)
     free(stack->data); stack->data = NULL;
 }
 
@@ -62,8 +79,8 @@ enum StackError stack_push(stack_t* const stack, const void* const elem)
     return STACK_ERROR_SUCCESS;
 }
 
-static void* recalloc_(void* ptrmem, const size_t old_number, const size_t number,
-                       const size_t size);
+static void* recalloc_(void* ptrmem, const size_t old_number, const size_t old_size,
+                                     const size_t     number, const size_t     size);
 
 static enum StackError stack_resize_(stack_t* stack)
 {
@@ -85,29 +102,46 @@ static enum StackError stack_resize_(stack_t* stack)
 
     if (new_capacity)
     {
-        void* temp_data = recalloc_(stack->data, stack->capacity, new_capacity, stack->elem_size);
-        
+        IF_PENGUIN(stack->data = (char*)stack->data - 1 * PENGUIN_SIZE;)
+        void* temp_data
+            = recalloc_(stack->data, 
+                        1, stack->capacity * stack->elem_size IF_PENGUIN(+ 2 * PENGUIN_SIZE),
+                        1, new_capacity    * stack->elem_size IF_PENGUIN(+ 2 * PENGUIN_SIZE));
         if (!temp_data)
         {
-            perror("Can't recalloc_");
+            fprintf(stderr, "Can't recalloc_");
             return STACK_ERROR_STANDART_ERRNO;
         }
         stack->data = temp_data; temp_data = NULL;
         stack->capacity = new_capacity;
+
+#ifdef PENGUIN_PROTECT
+        const PENGUIN_TYPE PENGUIN_bump = PENGUIN_CONTROL;
+        // fprintf(stderr, "do: %lX\n", *(uint64_t*)stack->data);
+        stack->data = (char*)stack->data + 1 * PENGUIN_SIZE;
+        // fprintf(stderr, "posle: %p\n", stack->data);
+        if (!memcpy((char*)stack->data + stack->capacity * stack->elem_size, &PENGUIN_bump, 
+                    PENGUIN_SIZE))
+        {
+            perror("Can't memcpy right PENGUIN");
+            return STACK_ERROR_STANDART_ERRNO;
+        }
+#endif /*PENGUIN_PROTECT*/
     }
 
     STACK_VERIFY(stack);
     return STACK_ERROR_SUCCESS;
 }
 
-static void* recalloc_(void* ptrmem, const size_t old_number, const size_t number, 
-                       const size_t size)
+
+static void* recalloc_(void* ptrmem, const size_t old_number, const size_t old_size,
+                                     const size_t     number, const size_t     size)
 {
     lassert(ptrmem, "");
     lassert(number, "");
     lassert(size  , "");
 
-    if (number == old_number)
+    if (number * size == old_number * old_size)
         return ptrmem;
 
     if (!(ptrmem = realloc(ptrmem, number * size)))
@@ -116,8 +150,8 @@ static void* recalloc_(void* ptrmem, const size_t old_number, const size_t numbe
         return NULL;
     }
 
-    if (number > old_number
-        && !memset((char*)ptrmem + old_number * size, 0, (number - old_number) * size))
+    if (number * size > old_number * old_size
+        && !memset((char*)ptrmem + old_number * old_size, 0, number * size - old_number * old_size))
     {
         perror("Can't memset in recalloc_");
         return NULL;

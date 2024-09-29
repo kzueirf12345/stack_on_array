@@ -4,6 +4,7 @@
 // #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "verification.h"
 
@@ -77,15 +78,24 @@ enum StackError stack_verify_func(const stack_t* const stack)
     
     if (stack->elem_size == 0)
         return STACK_ERROR_ELEM_SIZE_IS_NULL;
-    
+
 
     if (stack->size > stack->capacity)
         return STACK_ERROR_SIZE_GREATER_CAPACITY;
 
+#ifdef PENGUIN_PROTECT
 
+    const PENGUIN_TYPE PENGUIN_bump = PENGUIN_CONTROL;
+    if (memcmp((char*)stack->data - 1 * PENGUIN_SIZE, &PENGUIN_bump, PENGUIN_SIZE))
+        return STACK_ERROR_DATA_PENGUIN_LEFT;
+    if (memcmp((char*)stack->data + stack->elem_size * stack->capacity, &PENGUIN_bump, 
+                PENGUIN_SIZE))
+        return STACK_ERROR_DATA_PENGUIN_RIGHT;
+
+#endif /*PENDUIN_PROTECT*/
+    
     if (errno)
         return STACK_ERROR_STANDART_ERRNO;
-
 
     return STACK_ERROR_SUCCESS;
 }
@@ -106,8 +116,12 @@ const char* stack_strerror(const enum StackError error)
         CASE_ENUM_TO_STRING_(STACK_ERROR_STANDART_ERRNO);
         CASE_ENUM_TO_STRING_(STACK_ERROR_ELEM_SIZE_OVERFLOW);
         CASE_ENUM_TO_STRING_(STACK_ERROR_ELEM_SIZE_IS_NULL);
+#ifdef PENGUIN_PROTECT
         CASE_ENUM_TO_STRING_(STACK_ERROR_STACK_PENGUIN_LEFT);
         CASE_ENUM_TO_STRING_(STACK_ERROR_STACK_PENGUIN_RIGHT);
+        CASE_ENUM_TO_STRING_(STACK_ERROR_DATA_PENGUIN_LEFT);
+        CASE_ENUM_TO_STRING_(STACK_ERROR_DATA_PENGUIN_RIGHT);
+#endif /*PENGUIN_PROTECT*/
         CASE_ENUM_TO_STRING_(STACK_ERROR_UNKNOWN);
 
         default: 
@@ -189,9 +203,10 @@ enum StackError stack_dumb_func(const stack_t* const stack, place_in_code_t plac
                      stack_file_burn_buf, stack_line_burn_buf, stack_func_burn_buf);
 
     LOGG_AND_FPRINTF_("{");
-    LOGG_AND_FPRINTF_("\telem_size = %zu", stack->elem_size);
-    LOGG_AND_FPRINTF_("\tsize      = %zu", stack->size);
-    LOGG_AND_FPRINTF_("\tcapacity  = %zu", stack->capacity);
+    // IF_PENGUIN(LOGG_AND_FPRINTF_("\tuser_elem_size = %zu", stack->user_elem_size);)
+               LOGG_AND_FPRINTF_("\telem_size      = %zu", stack->elem_size);
+               LOGG_AND_FPRINTF_("\tsize           = %zu", stack->size);
+               LOGG_AND_FPRINTF_("\tcapacity       = %zu", stack->capacity);
 
     INIT_CONST_BUF_CHECK_STR_(stack_data_buf, stack->data);
     if (stack_data_buf)

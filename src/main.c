@@ -41,7 +41,7 @@ int main()
         printf("%-3d. ", stack_elem);
         printf("stack_data[]: %-3d ",
                *(int*)((char*)stack.data + (9 - (size_t)stack_elem) * stack.elem_size));
-               
+
         int stack_back_elem = 0;
         const enum StackError stack_back_error = stack_back(stack, &stack_back_elem);
         if (stack_back_error != STACK_ERROR_SUCCESS)
@@ -66,10 +66,6 @@ int main()
         }
         printf("stack_pop: %-3d\n", stack_pop_elem);
     }
-
-    
-
-
 
     stack_dtor(&stack);
 
