@@ -13,7 +13,7 @@
 
 #define PENGUIN_CONTROL (0xBAADC0FEDEADBABEu)
 #define PENGUIN_TYPE uint64_t
-#define PENGUIN_SIZE sizeof(PENGUIN_TYPE)
+#define PENGUIN_T_SIZE sizeof(PENGUIN_TYPE)
 
 #ifdef  PENGUIN_PROTECT
 #define IF_PENGUIN(...) __VA_ARGS__
@@ -24,6 +24,14 @@
 #endif/*PENGUIN_PROTECT*/
 
 
+#ifdef  HASH_PROTECT
+#define IF_HASH(...) __VA_ARGS__
+#define IF_ELSE_HASH(smth, other_smth) smth
+#else /*HASH_PROTECT*/
+#define IF_HASH(...)
+#define IF_ELSE_HASH(smth, other_smth) other_smth
+#endif/*HASH_PROTECT*/
+
 
 typedef struct stack_t
 {
@@ -32,6 +40,10 @@ typedef struct stack_t
 #endif /*PENGUIN_PROTECT*/
 
 
+#ifdef HASH_PROTECT
+    struct stack_t* stack_check;
+#endif /*HASH_PROTECT*/
+
 #ifndef NDEBUG
     const char* const name;
     place_in_code_t place_burn;
@@ -39,7 +51,6 @@ typedef struct stack_t
 
     void* data;
     size_t elem_size;
-    // IF_PENGUIN(size_t user_elem_size;)
     size_t size;
     size_t capacity;
 
@@ -49,18 +60,22 @@ typedef struct stack_t
 #endif /*PENGUIN_PROTECT*/
 } stack_t;
 
+#define STACK_T_SIZE sizeof(stack_t)
+
 
 #ifndef NDEBUG
-#ifndef  PENGUIN_PROTECT
+#ifndef PENGUIN_PROTECT
 
-#define STACK_INIT(name)                                                                            \
-        #name, (place_in_code_t){ .file = __FILE__, .func = __func__, .line = __LINE__ }
+#define STACK_INIT(name_)                                                                           \
+        .name = #name_,                                                                             \
+        .place_burn = (place_in_code_t){ .file = __FILE__, .func = __func__, .line = __LINE__ }
 
 #else  /*PENGUIN_PROTECT*/
 
-#define STACK_INIT(name)                                                                            \
+#define STACK_INIT(name_)                                                                           \
         .PENGUIN_LEFT_ = PENGUIN_CONTROL,                                                           \
-        #name, (place_in_code_t){ .file = __FILE__, .func = __func__, .line = __LINE__, },          \
+        .name = #name_,                                                                             \
+        .place_burn = (place_in_code_t){ .file = __FILE__, .func = __func__, .line = __LINE__, },   \
         .PENGUIN_RIGHT_ = PENGUIN_CONTROL
 
 #endif /*PENGUIN_PROTECT*/

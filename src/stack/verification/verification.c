@@ -12,6 +12,31 @@
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 
+#ifdef HASH_PROTECT
+uint64_t stack_hash(const void* const elem, size_t elem_size)
+{
+    lassert(elem, "");
+    lassert(elem_size, "");
+
+    uint64_t hash_val = 0;
+
+    const size_t SKIP_PENGUIN_AND_STACK_CHECK = IF_HASH(sizeof(PENGUIN_T_SIZE)) + sizeof(stack_t*);
+    for (size_t offset = SKIP_PENGUIN_AND_STACK_CHECK;
+         offset < elem_size;
+         offset += sizeof(uint64_t))
+    {
+        hash_val = hash_val * 31 + *(const uint64_t*)((const char*)elem + offset);                                                                                                                          /*vova loh*/
+    }
+
+    const size_t remainder = elem_size % sizeof(uint64_t);
+    for (size_t offset = elem_size - remainder; offset < elem_size; ++offset)
+    {
+        hash_val = hash_val * 31 + *(const uint8_t*)((const char*)elem + offset);
+    }
+
+    return hash_val;
+}
+#endif /*HASH_PROTECT*/
 
 enum PtrState
 {
@@ -86,13 +111,22 @@ enum StackError stack_verify_func(const stack_t* const stack)
 #ifdef PENGUIN_PROTECT
 
     const PENGUIN_TYPE PENGUIN_bump = PENGUIN_CONTROL;
-    if (memcmp((char*)stack->data - 1 * PENGUIN_SIZE, &PENGUIN_bump, PENGUIN_SIZE))
+    if (memcmp((char*)stack->data - 1 * PENGUIN_T_SIZE, &PENGUIN_bump, PENGUIN_T_SIZE))
         return STACK_ERROR_DATA_PENGUIN_LEFT;
     if (memcmp((char*)stack->data + stack->elem_size * stack->capacity, &PENGUIN_bump, 
-                PENGUIN_SIZE))
+                PENGUIN_T_SIZE))
         return STACK_ERROR_DATA_PENGUIN_RIGHT;
 
 #endif /*PENDUIN_PROTECT*/
+
+#ifdef HASH_PROTECT
+    if (!stack->stack_check)
+        return STACK_ERROR_STACK_CHECK_IS_NULL;
+
+    if (stack_hash(stack, STACK_T_SIZE)
+        != stack_hash(stack->stack_check, STACK_T_SIZE))
+        return STACK_ERROR_CONTROL_HASH_NEQUAL;
+#endif/*HASH_PROTECT*/
     
     if (errno)
         return STACK_ERROR_STANDART_ERRNO;
@@ -122,6 +156,10 @@ const char* stack_strerror(const enum StackError error)
         CASE_ENUM_TO_STRING_(STACK_ERROR_DATA_PENGUIN_LEFT);
         CASE_ENUM_TO_STRING_(STACK_ERROR_DATA_PENGUIN_RIGHT);
 #endif /*PENGUIN_PROTECT*/
+#ifdef HASH_PROTECT
+        CASE_ENUM_TO_STRING_(STACK_ERROR_CONTROL_HASH_NEQUAL);
+        CASE_ENUM_TO_STRING_(STACK_ERROR_STACK_CHECK_IS_NULL);
+#endif /*HASH_PROTECT*/
         CASE_ENUM_TO_STRING_(STACK_ERROR_UNKNOWN);
 
         default: 

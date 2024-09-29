@@ -14,29 +14,44 @@ enum StackError stack_ctor(stack_t* const stack, const size_t elem_size, const s
     lassert(stack    , "");
     lassert(elem_size, "");
 #ifdef PENGUIN_PROTECT
-    lassert(stack->PENGUIN_LEFT_  == PENGUIN_CONTROL, "");
-    lassert(stack->PENGUIN_RIGHT_ == PENGUIN_CONTROL, "");
+    lassert(stack->PENGUIN_LEFT_  == PENGUIN_CONTROL, "LEFT: %lX", stack->PENGUIN_LEFT_);
+    lassert(stack->PENGUIN_RIGHT_ == PENGUIN_CONTROL, "RIGHT: %lX", stack->PENGUIN_RIGHT_);
 #endif /*PENGUIN_PROTECT*/
 
     stack->elem_size = elem_size;
     stack->capacity = start_capacity;
     stack->size = 0;
-    stack->data = calloc(1, stack->elem_size * stack->capacity IF_PENGUIN(+ 2 * PENGUIN_SIZE));
+    stack->data = calloc(1, stack->elem_size * stack->capacity IF_PENGUIN(+ 2 * PENGUIN_T_SIZE));
     
 #ifdef PENGUIN_PROTECT
     const PENGUIN_TYPE PENGUIN_bump = PENGUIN_CONTROL;
-    if (!memcpy((char*)stack->data, &PENGUIN_bump, PENGUIN_SIZE))
+    if (!memcpy((char*)stack->data, &PENGUIN_bump, PENGUIN_T_SIZE))
     {
         perror("Can't memcpy left PENGUIN");
         return STACK_ERROR_STANDART_ERRNO;
     }
-    stack->data = (char*)stack->data + 1 * PENGUIN_SIZE;
-    if (!memcpy((char*)stack->data + stack->capacity * stack->elem_size, &PENGUIN_bump, PENGUIN_SIZE))
+    stack->data = (char*)stack->data + 1 * PENGUIN_T_SIZE;
+    if (!memcpy((char*)stack->data + stack->capacity * stack->elem_size, &PENGUIN_bump, PENGUIN_T_SIZE))
     {
         perror("Can't memcpy right PENGUIN");
         return STACK_ERROR_STANDART_ERRNO;
     }
 #endif /*PENGUIN_PROTECT*/
+
+#ifdef HASH_PROTECT
+    stack_t* stack_check = calloc(1, STACK_T_SIZE);
+    if (!stack_check)
+    {
+        perror("Can't calloc stack_check");
+        return STACK_ERROR_STANDART_ERRNO;
+    }
+    if (!memcpy(stack_check, stack, STACK_T_SIZE))
+    {
+        perror("Can't memcpy stack in stack_check");
+        return STACK_ERROR_STANDART_ERRNO;
+    }
+    stack->stack_check = stack_check;
+#endif /*HASH_PROTECT*/
     
     STACK_VERIFY(stack);
     return STACK_ERROR_SUCCESS;
@@ -49,8 +64,9 @@ void stack_dtor(stack_t* const stack)
     stack->capacity = 0;
     stack->size = 0;
     stack->elem_size = 0;
-    IF_PENGUIN(stack->data = (char*)stack->data - 1 * PENGUIN_SIZE;)
+    IF_PENGUIN(stack->data = (char*)stack->data - 1 * PENGUIN_T_SIZE;)
     free(stack->data); stack->data = NULL;
+    IF_HASH(free(stack->stack_check); stack->stack_check = NULL;)
 }
 
 
@@ -74,6 +90,7 @@ enum StackError stack_push(stack_t* const stack, const void* const elem)
         return STACK_ERROR_STANDART_ERRNO;
     }
     ++stack->size;
+    IF_HASH(++stack->stack_check->size;)
 
     STACK_VERIFY(stack);
     return STACK_ERROR_SUCCESS;
@@ -102,11 +119,11 @@ static enum StackError stack_resize_(stack_t* stack)
 
     if (new_capacity)
     {
-        IF_PENGUIN(stack->data = (char*)stack->data - 1 * PENGUIN_SIZE;)
+        IF_PENGUIN(stack->data = (char*)stack->data - 1 * PENGUIN_T_SIZE;)
         void* temp_data
             = recalloc_(stack->data, 
-                        1, stack->capacity * stack->elem_size IF_PENGUIN(+ 2 * PENGUIN_SIZE),
-                        1, new_capacity    * stack->elem_size IF_PENGUIN(+ 2 * PENGUIN_SIZE));
+                        1, stack->capacity * stack->elem_size IF_PENGUIN(+ 2 * PENGUIN_T_SIZE),
+                        1, new_capacity    * stack->elem_size IF_PENGUIN(+ 2 * PENGUIN_T_SIZE));
         if (!temp_data)
         {
             fprintf(stderr, "Can't recalloc_");
@@ -118,16 +135,19 @@ static enum StackError stack_resize_(stack_t* stack)
 #ifdef PENGUIN_PROTECT
         const PENGUIN_TYPE PENGUIN_bump = PENGUIN_CONTROL;
         // fprintf(stderr, "do: %lX\n", *(uint64_t*)stack->data);
-        stack->data = (char*)stack->data + 1 * PENGUIN_SIZE;
+        stack->data = (char*)stack->data + 1 * PENGUIN_T_SIZE;
         // fprintf(stderr, "posle: %p\n", stack->data);
         if (!memcpy((char*)stack->data + stack->capacity * stack->elem_size, &PENGUIN_bump, 
-                    PENGUIN_SIZE))
+                    PENGUIN_T_SIZE))
         {
             perror("Can't memcpy right PENGUIN");
             return STACK_ERROR_STANDART_ERRNO;
         }
 #endif /*PENGUIN_PROTECT*/
     }
+
+    IF_HASH(stack->stack_check->data = stack->data;)
+    IF_HASH(stack->stack_check->capacity = stack->capacity;)
 
     STACK_VERIFY(stack);
     return STACK_ERROR_SUCCESS;
@@ -180,6 +200,7 @@ enum StackError stack_pop(stack_t* const stack, void* const elem)
         return STACK_ERROR_STANDART_ERRNO;
     }
     --stack->size;
+    IF_HASH(--stack->stack_check->size;)
 
     const enum StackError stack_resize_error = stack_resize_(stack);
     if (stack_resize_error != STACK_ERROR_SUCCESS)
@@ -187,6 +208,7 @@ enum StackError stack_pop(stack_t* const stack, void* const elem)
         fprintf(stderr, "Can't stack resize\n");
         return stack_resize_error;
     }
+    IF_HASH(stack->stack_check->data = stack->data;)
 
     STACK_VERIFY(stack);
     return STACK_ERROR_SUCCESS;

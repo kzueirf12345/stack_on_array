@@ -7,9 +7,12 @@
 #include "../../logger/logger.h"
 #include "../stack_structs.h"
 
+
 #define STACK_MAX_SIZE_VALUE      1000000u
 #define STACK_MAX_CAPACITY_VALUE  1000000u
 #define STACK_MAX_ELEM_SIZE_VALUE 1000000u
+
+IF_HASH(uint64_t stack_hash(const void* const elem, size_t elem_size);)
 
 enum StackError
 {
@@ -30,7 +33,11 @@ enum StackError
     STACK_ERROR_DATA_PENGUIN_LEFT         = 13,
     STACK_ERROR_DATA_PENGUIN_RIGHT        = 14,
 #endif /*PENGUIN_PROTECT*/
-    STACK_ERROR_UNKNOWN                   = 15
+#ifdef   HASH_PROTECT
+    STACK_ERROR_CONTROL_HASH_NEQUAL       = 15,
+    STACK_ERROR_STACK_CHECK_IS_NULL       = 16,
+#endif /*HASH_PROTECT*/
+    STACK_ERROR_UNKNOWN                   = 17
 };
 static_assert(STACK_ERROR_SUCCESS == 0);
 
