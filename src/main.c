@@ -21,11 +21,11 @@ int main()
     //----------------------------------------------------------
 
     stack_t stack = { STACK_INIT(stack) };
-    stack_ctor(&stack, 0);
+    stack_ctor(&stack, sizeof(int), 0);
 
-    for (stack_elem_t stack_elem = 0; stack_elem < 100; ++stack_elem)
+    for (int stack_elem = 0; stack_elem < 10; ++stack_elem)
     {
-        const enum StackError stack_push_error = stack_push(&stack, stack_elem);
+        const enum StackError stack_push_error = stack_push(&stack, &stack_elem);
         if (stack_push_error != STACK_ERROR_SUCCESS)
         {
             if (logger_dtor())
@@ -36,12 +36,12 @@ int main()
         }
     }
 
-    for (stack_elem_t stack_elem = 0; stack_elem < 100; ++stack_elem)
+    for (int stack_elem = 0; stack_elem < 10; ++stack_elem)
     {
         printf("%-3d. ", stack_elem);
-        printf("stack_back: %-3d ", stack_back(stack));
+        printf("stack_back: %-3d ", *(int*)stack_back(stack));
 
-        stack_elem_t stack_pop_elem = 0;
+        int stack_pop_elem = 0;
         const enum StackError stack_pop_error = stack_pop(&stack, &stack_pop_elem);
         if (stack_pop_error != STACK_ERROR_SUCCESS)
         {
@@ -53,6 +53,8 @@ int main()
         }
         printf("stack_pop: %-3d\n", stack_pop_elem);
     }
+
+    
 
 
 

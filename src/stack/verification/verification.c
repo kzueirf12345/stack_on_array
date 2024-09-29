@@ -57,14 +57,22 @@ enum StackError stack_verify_func(const stack_t* const stack)
         return STACK_ERROR_UNKNOWN;
     }
 
+    if (stack->elem_size > STACK_MAX_ELEM_SIZE_VALUE)
+        return STACK_ERROR_ELEM_SIZE_OVERFLOW;
+
     if (stack->size > STACK_MAX_SIZE_VALUE)
         return STACK_ERROR_SIZE_OVERFLOW;
 
     if (stack->capacity > STACK_MAX_CAPACITY_VALUE)
         return STACK_ERROR_CAPACITY_OVERFLOW;
+    
+    if (stack->elem_size == 0)
+        return STACK_ERROR_ELEM_SIZE_IS_NULL;
+    
 
     if (stack->size > stack->capacity)
         return STACK_ERROR_SIZE_GREATER_CAPACITY;
+
 
     if (errno)
         return STACK_ERROR_STANDART_ERRNO;
@@ -88,6 +96,8 @@ const char* stack_strerror(const enum StackError error)
         CASE_ENUM_TO_STRING_(STACK_ERROR_STACK_IS_INVALID);
         CASE_ENUM_TO_STRING_(STACK_ERROR_STANDART_ERRNO);
         CASE_ENUM_TO_STRING_(STACK_ERROR_UNKNOWN);
+        CASE_ENUM_TO_STRING_(STACK_ERROR_ELEM_SIZE_OVERFLOW);
+        CASE_ENUM_TO_STRING_(STACK_ERROR_ELEM_SIZE_IS_NULL);
 
         default: 
             fprintf(stderr, "Unknown StackError enum, it's soooo bad\n");
@@ -140,9 +150,9 @@ enum StackError stack_dumb_func(const stack_t* const stack, place_in_code_t plac
     INIT_CONST_BUF_CHECK_STR_(func_buf , place_in_code.func);
     file_buf = file_buf ? file_buf : place_in_code.file;
     func_buf = func_buf ? func_buf : place_in_code.func;
-    const int                 line_buf = place_in_code.line <= 0
-                                         ? CODE_LINE_POISON
-                                         : place_in_code.line;
+    const int             line_buf = place_in_code.line <= 0
+                                     ? CODE_LINE_POISON
+                                     : place_in_code.line;
 
     if (stack_buf)
     {
@@ -168,8 +178,9 @@ enum StackError stack_dumb_func(const stack_t* const stack, place_in_code_t plac
                      stack_file_burn_buf, stack_line_burn_buf, stack_func_burn_buf);
 
     LOGG_AND_FPRINTF_("{");
-    LOGG_AND_FPRINTF_("\tsize     = %zu", stack->size);
-    LOGG_AND_FPRINTF_("\tcapacity = %zu", stack->capacity);
+    LOGG_AND_FPRINTF_("\telem_size = %zu", stack->elem_size);
+    LOGG_AND_FPRINTF_("\tsize      = %zu", stack->size);
+    LOGG_AND_FPRINTF_("\tcapacity  = %zu", stack->capacity);
 
     INIT_CONST_BUF_CHECK_STR_(stack_data_buf, stack->data);
     if (stack_data_buf)
@@ -188,9 +199,12 @@ enum StackError stack_dumb_func(const stack_t* const stack, place_in_code_t plac
     for (size_t ind = 0; ind < ind_count; ++ind)
     {
         if (ind < stack->size)
-            LOGG_AND_FPRINTF_("\t\t*[%-3zu] = %d", ind, stack->data[ind]);
+            LOGG_AND_FPRINTF_("\t\t*[%-3zu] = %d",
+                              ind, *(int*)((char*)stack->data + ind * stack->elem_size)); 
+                              // TODO - check void* print, maybe define type with ifndef
         else
-            LOGG_AND_FPRINTF_("\t\t [%-3zu] = %d", ind, stack->data[ind]);
+            LOGG_AND_FPRINTF_("\t\t [%-3zu] = %d",
+                              ind, *(int*)((char*)stack->data + ind * stack->elem_size));
     }
 
     LOGG_AND_FPRINTF_("\t}");   
@@ -218,7 +232,7 @@ static enum PtrState is_valid_ptr_(const void* ptr)
         return PTR_STATES_ERROR;
     else 
         errno = 0;
-        
+
     return PTR_STATES_VALID;
 }
 

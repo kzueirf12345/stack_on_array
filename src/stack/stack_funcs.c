@@ -1,4 +1,5 @@
 #include <memory.h>
+#include <sys/mman.h> 
 
 #include "stack_funcs.h"
 #include "verification/verification.h"
@@ -8,13 +9,15 @@
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 
 
-void stack_ctor(stack_t* const stack, const size_t start_capacity)
+void stack_ctor(stack_t* const stack, const size_t elem_size, const size_t start_capacity)
 {
-    lassert(stack, "");
+    lassert(stack    , "");
+    lassert(elem_size, "");
 
+    stack->elem_size = elem_size;
     stack->capacity = start_capacity;
     stack->size = 0;
-    stack->data = calloc(start_capacity, sizeof(stack_elem_t));
+    stack->data = calloc(start_capacity, elem_size);
     
     STACK_VERIFY(stack);
 }
@@ -25,15 +28,17 @@ void stack_dtor(stack_t* const stack)
 
     stack->capacity = 0;
     stack->size = 0;
+    stack->elem_size = 0;
     free(stack->data); stack->data = NULL;
 }
 
 
 static enum StackError stack_resize_(stack_t* stack);
 
-enum StackError stack_push(stack_t* stack, const stack_elem_t elem)
+enum StackError stack_push(stack_t* stack, const void* const elem)
 {
     STACK_VERIFY(stack);
+    lassert(elem, "");
 
     const enum StackError stack_resize_error = stack_resize_(stack);
     if (stack_resize_error != STACK_ERROR_SUCCESS)
@@ -42,7 +47,12 @@ enum StackError stack_push(stack_t* stack, const stack_elem_t elem)
         return stack_resize_error;
     }
 
-    stack->data[stack->size++] = elem;
+    if (!memcpy((char*)stack->data + stack->size * stack->elem_size, elem, stack->elem_size))
+    {
+        perror("Can't push elem with memcpy");
+        return STACK_ERROR_STANDART_ERRNO;
+    }
+    ++stack->size;
 
     STACK_VERIFY(stack);
     return STACK_ERROR_SUCCESS;
@@ -71,8 +81,8 @@ static enum StackError stack_resize_(stack_t* stack)
 
     if (new_capacity)
     {
-        stack_elem_t* temp_data = recalloc_(stack->data, stack->capacity, new_capacity,
-                                            sizeof(*stack->data));
+        void* temp_data = recalloc_(stack->data, stack->capacity, new_capacity, stack->elem_size);
+        
         if (!temp_data)
         {
             perror("Can't recalloc_");
@@ -91,6 +101,7 @@ static void* recalloc_(void* ptrmem, const size_t old_number, const size_t numbe
 {
     lassert(ptrmem, "");
     lassert(number, "");
+    lassert(size  , "");
 
     if (number == old_number)
         return ptrmem;
@@ -112,14 +123,25 @@ static void* recalloc_(void* ptrmem, const size_t old_number, const size_t numbe
 }
 
 
-enum StackError stack_pop(stack_t* stack, stack_elem_t* const elem)
+enum StackError stack_pop(stack_t* stack, void* const elem)
 {
     STACK_VERIFY(stack);
     lassert(stack->size > 0, "");
+    lassert(elem           , "");
 
-    if (elem) *elem = stack->data[stack->size - 1];
+    if (elem &&
+        !memcpy(elem, (char*)stack->data + (stack->size - 1) * stack->elem_size, stack->elem_size))
+    {
+        perror("Can't push back stack elem with memcpy");
+        return STACK_ERROR_STANDART_ERRNO;
+    }
 
-    stack->data[--stack->size] = 0;
+    if (!memset((char*)stack->data + (stack->size - 1) * stack->elem_size, 0, stack->elem_size))
+    {
+        perror("Can't memset zero back elem in stack pop");
+        return STACK_ERROR_STANDART_ERRNO;
+    }
+    --stack->size;
 
     const enum StackError stack_resize_error = stack_resize_(stack);
     if (stack_resize_error != STACK_ERROR_SUCCESS)
@@ -133,10 +155,10 @@ enum StackError stack_pop(stack_t* stack, stack_elem_t* const elem)
 }
 
 
-stack_elem_t stack_back(const stack_t stack)
+void* stack_back(const stack_t stack)
 {
     STACK_VERIFY(&stack);
     lassert(stack.size > 0, "");
 
-    return stack.data[stack.size - 1];
+    return (char*)stack.data + (stack.size - 1) * stack.elem_size;
 }
