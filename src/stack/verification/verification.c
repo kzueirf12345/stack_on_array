@@ -41,6 +41,15 @@ enum StackError stack_verify_func(const stack_t* const stack)
         return STACK_ERROR_UNKNOWN;
     }
 
+#ifdef PENGUIN_PROTECT
+
+    if (stack->PENGUIN_LEFT_  != PENGUIN_CONTROL)
+        return STACK_ERROR_STACK_PENGUIN_LEFT;
+    if (stack->PENGUIN_RIGHT_ != PENGUIN_CONTROL)
+        return STACK_ERROR_STACK_PENGUIN_RIGHT;
+
+#endif /*PENDUIN_PROTECT*/
+
     switch (is_valid_ptr_(stack->data))
     {
     case PTR_STATES_VALID:
@@ -95,9 +104,11 @@ const char* stack_strerror(const enum StackError error)
         CASE_ENUM_TO_STRING_(STACK_ERROR_STACK_IS_NULL);
         CASE_ENUM_TO_STRING_(STACK_ERROR_STACK_IS_INVALID);
         CASE_ENUM_TO_STRING_(STACK_ERROR_STANDART_ERRNO);
-        CASE_ENUM_TO_STRING_(STACK_ERROR_UNKNOWN);
         CASE_ENUM_TO_STRING_(STACK_ERROR_ELEM_SIZE_OVERFLOW);
         CASE_ENUM_TO_STRING_(STACK_ERROR_ELEM_SIZE_IS_NULL);
+        CASE_ENUM_TO_STRING_(STACK_ERROR_STACK_PENGUIN_LEFT);
+        CASE_ENUM_TO_STRING_(STACK_ERROR_STACK_PENGUIN_RIGHT);
+        CASE_ENUM_TO_STRING_(STACK_ERROR_UNKNOWN);
 
         default: 
             fprintf(stderr, "Unknown StackError enum, it's soooo bad\n");

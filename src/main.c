@@ -4,7 +4,7 @@
 #include "stack/stack_funcs.h"
 #include "stack/verification/verification.h"
 
-
+// TODO - README
 int main()
 {
     if (logger_ctor())

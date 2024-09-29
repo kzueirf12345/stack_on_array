@@ -13,6 +13,10 @@ void stack_ctor(stack_t* const stack, const size_t elem_size, const size_t start
 {
     lassert(stack    , "");
     lassert(elem_size, "");
+#ifdef PENGUIN_PROTECT
+    lassert(stack->PENGUIN_LEFT_  == PENGUIN_CONTROL, "");
+    lassert(stack->PENGUIN_RIGHT_ == PENGUIN_CONTROL, "");
+#endif /*PENGUIN_PROTECT*/
 
     stack->elem_size = elem_size;
     stack->capacity = start_capacity;

@@ -19,7 +19,7 @@
 typedef struct stack_t
 {
 #ifdef PENGUIN_PROTECT
-    uint64_t PENGUIN_1_;
+    const uint64_t PENGUIN_LEFT_;
 #endif /*PENGUIN_PROTECT*/
 
 
@@ -35,7 +35,7 @@ typedef struct stack_t
 
 
 #ifdef PENGUIN_PROTECT
-    uint64_t PENGUIN_2_;
+    const uint64_t PENGUIN_RIGHT_;
 #endif /*PENGUIN_PROTECT*/
 } stack_t;
 
@@ -49,9 +49,9 @@ typedef struct stack_t
 #else  /*PENGUIN_PROTECT*/
 
 #define STACK_INIT(name)                                                                            \
-        .PENGUIN_1_ = PENGUIN_CONTROL,                                                              \
+        .PENGUIN_LEFT_ = PENGUIN_CONTROL,                                                              \
         #name, (place_in_code_t){ .file = __FILE__, .func = __func__, .line = __LINE__, },          \
-        .PENGUIN_2_ = PENGUIN_CONTROL
+        .PENGUIN_RIGHT_ = PENGUIN_CONTROL
 
 #endif /*PENGUIN_PROTECT*/
 #else  /*NDEBUG*/

@@ -24,7 +24,11 @@ enum StackError
     STACK_ERROR_STACK_IS_INVALID          = 8,
     STACK_ERROR_ELEM_SIZE_OVERFLOW        = 9,
     STACK_ERROR_ELEM_SIZE_IS_NULL         = 10,
-    STACK_ERROR_UNKNOWN                   = 11
+#ifdef   PENGUIN_PROTECT
+    STACK_ERROR_STACK_PENGUIN_LEFT        = 11,
+    STACK_ERROR_STACK_PENGUIN_RIGHT       = 12,
+#endif /*PENGUIN_PROTECT*/
+    STACK_ERROR_UNKNOWN                   = 13
 };
 static_assert(STACK_ERROR_SUCCESS == 0);
 
