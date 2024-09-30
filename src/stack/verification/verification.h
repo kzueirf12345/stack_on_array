@@ -12,8 +12,6 @@
 #define STACK_MAX_CAPACITY_VALUE  1000000u
 #define STACK_MAX_ELEM_SIZE_VALUE 1000000u
 
-IF_HASH(uint64_t stack_hash(const void* const elem, size_t elem_size);)
-
 enum StackError
 {
     STACK_ERROR_SUCCESS                   = 0,
@@ -34,10 +32,12 @@ enum StackError
     STACK_ERROR_DATA_PENGUIN_RIGHT        = 14,
 #endif /*PENGUIN_PROTECT*/
 #ifdef   HASH_PROTECT
-    STACK_ERROR_CONTROL_HASH_NEQUAL       = 15,
+    STACK_ERROR_STACK_CONTROL_HASH_NEQUAL = 15,
     STACK_ERROR_STACK_CHECK_IS_NULL       = 16,
+    STACK_ERROR_DATA_CONTROL_HASH_NEQUAL  = 17,
+    STACK_ERROR_DATA_CHECK_IS_NULL        = 18,
 #endif /*HASH_PROTECT*/
-    STACK_ERROR_UNKNOWN                   = 17
+    STACK_ERROR_UNKNOWN                   = 19
 };
 static_assert(STACK_ERROR_SUCCESS == 0);
 

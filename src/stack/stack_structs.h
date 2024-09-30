@@ -23,6 +23,7 @@
 #define IF_ELSE_PENGUIN(smth, other_smth) other_smth
 #endif/*PENGUIN_PROTECT*/
 
+#define HASH_PROTECT //TODO - remove it 
 
 #ifdef  HASH_PROTECT
 #define IF_HASH(...) __VA_ARGS__
@@ -42,6 +43,7 @@ typedef struct stack_t
 
 #ifdef HASH_PROTECT
     struct stack_t* stack_check;
+    void* data_check;
 #endif /*HASH_PROTECT*/
 
 #ifndef NDEBUG

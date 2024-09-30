@@ -12,31 +12,7 @@
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 
-#ifdef HASH_PROTECT
-uint64_t stack_hash(const void* const elem, size_t elem_size)
-{
-    lassert(elem, "");
-    lassert(elem_size, "");
-
-    uint64_t hash_val = 0;
-
-    const size_t SKIP_PENGUIN_AND_STACK_CHECK = IF_HASH(sizeof(PENGUIN_T_SIZE)) + sizeof(stack_t*);
-    for (size_t offset = SKIP_PENGUIN_AND_STACK_CHECK;
-         offset < elem_size;
-         offset += sizeof(uint64_t))
-    {
-        hash_val = hash_val * 31 + *(const uint64_t*)((const char*)elem + offset);                                                                                                                          /*vova loh*/
-    }
-
-    const size_t remainder = elem_size % sizeof(uint64_t);
-    for (size_t offset = elem_size - remainder; offset < elem_size; ++offset)
-    {
-        hash_val = hash_val * 31 + *(const uint8_t*)((const char*)elem + offset);
-    }
-
-    return hash_val;
-}
-#endif /*HASH_PROTECT*/
+IF_HASH(uint64_t stack_hash_(const void* const elem, size_t elem_size, size_t first_skip_size);)
 
 enum PtrState
 {
@@ -48,7 +24,7 @@ enum PtrState
 static_assert(PTR_STATES_VALID == 0);
 
 static enum PtrState is_valid_ptr_(const void* ptr);
-
+//TODO check penguins in check 
 enum StackError stack_verify_func(const stack_t* const stack)
 {
     switch (is_valid_ptr_(stack))
@@ -123,9 +99,18 @@ enum StackError stack_verify_func(const stack_t* const stack)
     if (!stack->stack_check)
         return STACK_ERROR_STACK_CHECK_IS_NULL;
 
-    if (stack_hash(stack, STACK_T_SIZE)
-        != stack_hash(stack->stack_check, STACK_T_SIZE))
-        return STACK_ERROR_CONTROL_HASH_NEQUAL;
+    if (stack_hash_(stack             , STACK_T_SIZE, 
+                    IF_PENGUIN(PENGUIN_T_SIZE) + sizeof(stack_t*) + sizeof(stack->data_check)) 
+     != stack_hash_(stack->stack_check, STACK_T_SIZE,
+                    IF_PENGUIN(PENGUIN_T_SIZE) + sizeof(stack_t*) + sizeof(stack->data_check)))
+        return STACK_ERROR_STACK_CONTROL_HASH_NEQUAL;
+    
+    if (!stack->data_check)
+        return STACK_ERROR_DATA_CHECK_IS_NULL;
+
+    if (stack_hash_(stack->data      , stack->capacity * stack->elem_size, 0) !=
+        stack_hash_(stack->data_check, stack->capacity * stack->elem_size, 0))
+        return STACK_ERROR_DATA_CONTROL_HASH_NEQUAL;
 #endif/*HASH_PROTECT*/
     
     if (errno)
@@ -157,8 +142,10 @@ const char* stack_strerror(const enum StackError error)
         CASE_ENUM_TO_STRING_(STACK_ERROR_DATA_PENGUIN_RIGHT);
 #endif /*PENGUIN_PROTECT*/
 #ifdef HASH_PROTECT
-        CASE_ENUM_TO_STRING_(STACK_ERROR_CONTROL_HASH_NEQUAL);
+        CASE_ENUM_TO_STRING_(STACK_ERROR_STACK_CONTROL_HASH_NEQUAL);
         CASE_ENUM_TO_STRING_(STACK_ERROR_STACK_CHECK_IS_NULL);
+        CASE_ENUM_TO_STRING_(STACK_ERROR_DATA_CONTROL_HASH_NEQUAL);
+        CASE_ENUM_TO_STRING_(STACK_ERROR_DATA_CHECK_IS_NULL);
 #endif /*HASH_PROTECT*/
         CASE_ENUM_TO_STRING_(STACK_ERROR_UNKNOWN);
 
@@ -299,5 +286,29 @@ static enum PtrState is_valid_ptr_(const void* ptr)
 
     return PTR_STATES_VALID;
 }
+
+#ifdef HASH_PROTECT
+uint64_t stack_hash_(const void* const elem, size_t elem_size, size_t first_skip_size)
+{
+    lassert(elem, "");
+    // lassert(elem_size, "");
+    lassert(first_skip_size <= elem_size, "");
+
+    uint64_t hash_val = 0;
+
+    for (size_t offset = first_skip_size; offset < elem_size; offset += sizeof(uint64_t))
+    {
+        hash_val = hash_val * 31 + *(const uint64_t*)((const char*)elem + offset);                                                                                                                          /*vova loh*/
+    }
+
+    const size_t remainder = elem_size % sizeof(uint64_t);
+    for (size_t offset = elem_size - remainder; offset < elem_size; ++offset)
+    {
+        hash_val = hash_val * 31 + *(const uint8_t*)((const char*)elem + offset);
+    }
+
+    return hash_val;
+}
+#endif /*HASH_PROTECT*/
 
 #endif /*NDEBUG*/

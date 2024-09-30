@@ -26,7 +26,7 @@ int main()
     // fprintf(stderr, "RIGHT: %lX", stack.PENGUIN_RIGHT_);
     stack_ctor(&stack, sizeof(int), 0);
 
-    for (int stack_elem = 0; stack_elem < 100000; ++stack_elem)
+    for (int stack_elem = 0; stack_elem < 10; ++stack_elem)
     {
         const enum StackError stack_push_error = stack_push(&stack, &stack_elem);
         if (stack_push_error != STACK_ERROR_SUCCESS)
@@ -39,11 +39,11 @@ int main()
         }
     }
 
-    for (int stack_elem = 0; stack_elem < 100000; ++stack_elem)
+    for (int stack_elem = 0; stack_elem < 10; ++stack_elem)
     {
-        // printf("%-3d. ", stack_elem);
-        // printf("stack_data[]: %-3d ",
-            //    *(int*)((char*)stack.data + (99999 - (size_t)stack_elem) * stack.elem_size));
+        fprintf(stderr, "%-3d. ", stack_elem);
+        fprintf(stderr, "stack_data[]: %-3d ",
+               *(int*)((char*)stack.data + (9 - (size_t)stack_elem) * stack.elem_size));
 
         int stack_back_elem = 0;
         const enum StackError stack_back_error = stack_back(stack, &stack_back_elem);
@@ -55,7 +55,7 @@ int main()
             fprintf(stderr, "Can't stack push. STACK_ERROR: %s", stack_strerror(stack_back_error));
             return EXIT_FAILURE;
         }
-        // printf("stack_back: %-3d ", stack_back_elem);
+        fprintf(stderr, "stack_back: %-3d ", stack_back_elem);
 
         int stack_pop_elem = 0;
         const enum StackError stack_pop_error = stack_pop(&stack, &stack_pop_elem);
@@ -67,7 +67,7 @@ int main()
             fprintf(stderr, "Can't stack push. STACK_ERROR: %s", stack_strerror(stack_pop_error));
             return EXIT_FAILURE;
         }
-        // printf("stack_pop: %-3d\n", stack_pop_elem);
+        fprintf(stderr, "stack_pop: %-3d\n", stack_pop_elem);
     }
 
     stack_dtor(&stack);
