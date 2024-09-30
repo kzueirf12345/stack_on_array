@@ -1,10 +1,9 @@
-#include <stdio.h>
+#define HASH_PROTECT
+#define PENGUIN_PROTECT
 
-// #define HASH_PROTECT
 #include "logger/logger.h"
 #include "stack/stack_funcs.h"
 #include "stack/verification/verification.h"
-// #undef PENGUIN_PROTECT // TODO - это нихуя не работает, надо переносить всё в ашник
 
 // TODO - README
 int main()
@@ -25,7 +24,7 @@ int main()
     stack_t stack = { STACK_INIT(stack) };
     stack_ctor(&stack, sizeof(int), 0);
 
-    for (int stack_elem = 0; stack_elem < 10000; ++stack_elem)
+    for (int stack_elem = 0; stack_elem < 100000; ++stack_elem)
     {
         const enum StackError stack_push_error = stack_push(&stack, &stack_elem);
         if (stack_push_error != STACK_ERROR_SUCCESS)
@@ -38,11 +37,11 @@ int main()
         }
     }
 
-    for (int stack_elem = 0; stack_elem < 10000; ++stack_elem)
+    for (int stack_elem = 0; stack_elem < 100000; ++stack_elem)
     {
         // fprintf(stderr, "%-3d. ", stack_elem);
         // fprintf(stderr, "stack_data[]: %-3d ",
-        //        *(int*)((char*)stack.data + (9999 - (size_t)stack_elem) * stack.elem_size));
+        //        *(int*)((char*)stack.data + (99 - (size_t)stack_elem) * stack.elem_size));
 
         int stack_back_elem = 0;
         const enum StackError stack_back_error = stack_back(stack, &stack_back_elem);

@@ -7,10 +7,6 @@
 #include "../logger/logger.h"
 
 
-#ifndef NDEBUG
-// #define PENGUIN_PROTECT
-#endif /*NDEBUG*/
-
 #define PENGUIN_CONTROL (0xBAADC0FEDEADBABEu)
 #define PENGUIN_TYPE uint64_t
 #define PENGUIN_T_SIZE sizeof(PENGUIN_TYPE)
@@ -23,7 +19,6 @@
 #define IF_ELSE_PENGUIN(smth, other_smth) other_smth
 #endif/*PENGUIN_PROTECT*/
 
-#define HASH_PROTECT //TODO - remove it 
 
 #ifdef  HASH_PROTECT
 #define IF_HASH(...) __VA_ARGS__

@@ -35,7 +35,7 @@ DIRS = logger stack stack/verification
 BUILD_DIRS = $(DIRS:%=$(BUILD_DIR)/%)
 
 
-SOURCES = main.c logger/logger.c stack/verification/verification.c stack/stack_funcs.c
+SOURCES = main.c logger/logger.c
 
 SOURCES_REL_PATH = $(SOURCES:%=$(SRC_DIR)/%)
 OBJECTS_REL_PATH = $(SOURCES:%.c=$(BUILD_DIR)/%.o)
