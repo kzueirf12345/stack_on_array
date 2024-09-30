@@ -4,7 +4,8 @@
 #include "stack_structs.h"
 
 
-enum StackError stack_ctor(stack_t* const stack, const size_t elem_size, const size_t start_capacity);
+enum StackError stack_ctor(stack_t* const stack, const size_t elem_size, 
+                           const size_t start_capacity);
 void stack_dtor(stack_t* const stack);
 
 enum StackError stack_push(stack_t* const stack, const void* const elem);

@@ -89,7 +89,8 @@ enum StackError stack_verify_func(const stack_t* const stack)
 
     const PENGUIN_TYPE PENGUIN_bump = PENGUIN_CONTROL;
 
-    if (memcmp((char*)stack->data - 1 * PENGUIN_T_SIZE, &PENGUIN_bump, PENGUIN_T_SIZE))
+    if (memcmp((char*)stack->data - 1 * PENGUIN_T_SIZE                , &PENGUIN_bump,
+                PENGUIN_T_SIZE))
         return STACK_ERROR_DATA_PENGUIN_LEFT;
     if (memcmp((char*)stack->data + stack->elem_size * stack->capacity, &PENGUIN_bump, 
                 PENGUIN_T_SIZE))
@@ -99,6 +100,7 @@ enum StackError stack_verify_func(const stack_t* const stack)
 
 
 #ifdef HASH_PROTECT
+
     if (!stack->stack_check)
         return STACK_ERROR_STACK_CHECK_IS_NULL;
 
@@ -120,7 +122,8 @@ enum StackError stack_verify_func(const stack_t* const stack)
         return STACK_ERROR_DATA_CHECK_IS_NULL;
 
 #ifdef PENGUIN_PROTECT
-    if (memcmp((char*)stack->data_check - 1 * PENGUIN_T_SIZE, &PENGUIN_bump, PENGUIN_T_SIZE))
+    if (memcmp((char*)stack->data_check - 1 * PENGUIN_T_SIZE                , &PENGUIN_bump,
+                PENGUIN_T_SIZE))
         return STACK_ERROR_DATA_CHECK_PENGUIN_LEFT;
     if (memcmp((char*)stack->data_check + stack->elem_size * stack->capacity, &PENGUIN_bump, 
                 PENGUIN_T_SIZE))
@@ -130,6 +133,7 @@ enum StackError stack_verify_func(const stack_t* const stack)
     if (stack_hash_(stack->data      , stack->capacity * stack->elem_size, 0) !=
         stack_hash_(stack->data_check, stack->capacity * stack->elem_size, 0))
         return STACK_ERROR_DATA_CONTROL_HASH_NEQUAL;
+
 #endif/*HASH_PROTECT*/
     
     
