@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../../logger/logger.h"
 #include "../stack_structs.h"
 
 

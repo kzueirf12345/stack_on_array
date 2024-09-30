@@ -4,7 +4,6 @@
 #include <memory.h>
 #include <sys/mman.h> 
 
-#include "stack_structs.h"
 #include "verification/verification.h"
 
 

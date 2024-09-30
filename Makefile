@@ -31,7 +31,7 @@ RELEASE_FLAGS = -DNDEBUG -O2 $(SANITIZER)
 FLAGS += $(if $(DEBUG_),$(DEBUG_FLAGS),$(RELEASE_FLAGS))
 
 
-DIRS = logger stack stack/verification
+DIRS = logger stack stack/verification stack/test
 BUILD_DIRS = $(DIRS:%=$(BUILD_DIR)/%)
 
 
