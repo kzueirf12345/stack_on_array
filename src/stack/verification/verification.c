@@ -14,6 +14,7 @@
 
 IF_HASH(uint64_t stack_hash_(const void* const elem, size_t elem_size, size_t first_skip_size);)
 
+
 enum PtrState
 {
     PTR_STATES_VALID   = 0,
@@ -87,6 +88,7 @@ enum StackError stack_verify_func(const stack_t* const stack)
 #ifdef PENGUIN_PROTECT
 
     const PENGUIN_TYPE PENGUIN_bump = PENGUIN_CONTROL;
+
     if (memcmp((char*)stack->data - 1 * PENGUIN_T_SIZE, &PENGUIN_bump, PENGUIN_T_SIZE))
         return STACK_ERROR_DATA_PENGUIN_LEFT;
     if (memcmp((char*)stack->data + stack->elem_size * stack->capacity, &PENGUIN_bump, 
@@ -95,9 +97,17 @@ enum StackError stack_verify_func(const stack_t* const stack)
 
 #endif /*PENDUIN_PROTECT*/
 
+
 #ifdef HASH_PROTECT
     if (!stack->stack_check)
         return STACK_ERROR_STACK_CHECK_IS_NULL;
+
+#ifdef PENGUIN_PROTECT
+    if (stack->stack_check->PENGUIN_LEFT_  != PENGUIN_CONTROL)
+        return STACK_ERROR_STACK_CHECK_PENGUIN_LEFT;
+    if (stack->stack_check->PENGUIN_RIGHT_ != PENGUIN_CONTROL)
+        return STACK_ERROR_STACK_CHECK_PENGUIN_RIGHT;
+#endif /*PENDUIN_PROTECT*/
 
     if (stack_hash_(stack             , STACK_T_SIZE, 
                     IF_PENGUIN(PENGUIN_T_SIZE) + sizeof(stack_t*) + sizeof(stack->data_check)) 
@@ -105,13 +115,23 @@ enum StackError stack_verify_func(const stack_t* const stack)
                     IF_PENGUIN(PENGUIN_T_SIZE) + sizeof(stack_t*) + sizeof(stack->data_check)))
         return STACK_ERROR_STACK_CONTROL_HASH_NEQUAL;
     
+
     if (!stack->data_check)
         return STACK_ERROR_DATA_CHECK_IS_NULL;
+
+#ifdef PENGUIN_PROTECT
+    if (memcmp((char*)stack->data_check - 1 * PENGUIN_T_SIZE, &PENGUIN_bump, PENGUIN_T_SIZE))
+        return STACK_ERROR_DATA_CHECK_PENGUIN_LEFT;
+    if (memcmp((char*)stack->data_check + stack->elem_size * stack->capacity, &PENGUIN_bump, 
+                PENGUIN_T_SIZE))
+        return STACK_ERROR_DATA_CHECK_PENGUIN_RIGHT;
+#endif /*PENDUIN_PROTECT*/
 
     if (stack_hash_(stack->data      , stack->capacity * stack->elem_size, 0) !=
         stack_hash_(stack->data_check, stack->capacity * stack->elem_size, 0))
         return STACK_ERROR_DATA_CONTROL_HASH_NEQUAL;
 #endif/*HASH_PROTECT*/
+    
     
     if (errno)
         return STACK_ERROR_STANDART_ERRNO;
@@ -146,6 +166,12 @@ const char* stack_strerror(const enum StackError error)
         CASE_ENUM_TO_STRING_(STACK_ERROR_STACK_CHECK_IS_NULL);
         CASE_ENUM_TO_STRING_(STACK_ERROR_DATA_CONTROL_HASH_NEQUAL);
         CASE_ENUM_TO_STRING_(STACK_ERROR_DATA_CHECK_IS_NULL);
+#ifdef PENGUIN_PROTECT
+        CASE_ENUM_TO_STRING_(STACK_ERROR_STACK_CHECK_PENGUIN_LEFT);
+        CASE_ENUM_TO_STRING_(STACK_ERROR_STACK_CHECK_PENGUIN_RIGHT);
+        CASE_ENUM_TO_STRING_(STACK_ERROR_DATA_CHECK_PENGUIN_LEFT);
+        CASE_ENUM_TO_STRING_(STACK_ERROR_DATA_CHECK_PENGUIN_RIGHT);
+#endif /*PENGUIN_PROTECT*/
 #endif /*HASH_PROTECT*/
         CASE_ENUM_TO_STRING_(STACK_ERROR_UNKNOWN);
 
@@ -228,10 +254,9 @@ enum StackError stack_dumb_func(const stack_t* const stack, place_in_code_t plac
                      stack_file_burn_buf, stack_line_burn_buf, stack_func_burn_buf);
 
     LOGG_AND_FPRINTF_("{");
-    // IF_PENGUIN(LOGG_AND_FPRINTF_("\tuser_elem_size = %zu", stack->user_elem_size);)
-               LOGG_AND_FPRINTF_("\telem_size      = %zu", stack->elem_size);
-               LOGG_AND_FPRINTF_("\tsize           = %zu", stack->size);
-               LOGG_AND_FPRINTF_("\tcapacity       = %zu", stack->capacity);
+    LOGG_AND_FPRINTF_("\telem_size = %zu", stack->elem_size);
+    LOGG_AND_FPRINTF_("\tsize      = %zu", stack->size);
+    LOGG_AND_FPRINTF_("\tcapacity  = %zu", stack->capacity);
 
     INIT_CONST_BUF_CHECK_STR_(stack_data_buf, stack->data);
     if (stack_data_buf)

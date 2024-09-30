@@ -11,26 +11,6 @@
 enum StackError update_stack_data_check_(stack_t* const stack);
 enum StackError update_stack_check_(stack_t* const stack);
 
-enum StackError update_stack_data_check_(stack_t* const stack)
-{
-    if (!memcpy((char*)stack->data_check, (char*)stack->data, stack->capacity))
-    {
-        perror("Can't memcpy stack->data in stack->data_check");
-        return STACK_ERROR_STANDART_ERRNO;
-    }
-    return STACK_ERROR_SUCCESS;
-}
-
-enum StackError update_stack_check_(stack_t* const stack)
-{
-    if (!memcpy(stack->stack_check, stack, STACK_T_SIZE))
-    {
-        perror("Can't memcpy stack in stack_check");
-        return STACK_ERROR_STANDART_ERRNO;
-    }
-    return STACK_ERROR_SUCCESS;
-}
-
 enum StackError stack_ctor(stack_t* const stack, const size_t elem_size, const size_t start_capacity)
 {
     lassert(stack    , "");
@@ -127,6 +107,7 @@ void stack_dtor(stack_t* const stack)
 }
 
 
+
 static enum StackError stack_resize_(stack_t* stack);
 
 enum StackError stack_push(stack_t* const stack, const void* const elem)
@@ -168,6 +149,7 @@ enum StackError stack_push(stack_t* const stack, const void* const elem)
     return STACK_ERROR_SUCCESS;
 }
 
+
 static void* recalloc_(void* ptrmem, const size_t old_number, const size_t old_size,
                                      const size_t     number, const size_t     size);
 
@@ -202,12 +184,11 @@ static enum StackError stack_resize_(stack_t* stack)
             return STACK_ERROR_STANDART_ERRNO;
         }
         stack->data = temp_data; temp_data = NULL;
-        stack->capacity = new_capacity;
 
-#ifdef PENGUIN_PROTECT // REVIEW - нахуя я это делаю
+#ifdef PENGUIN_PROTECT
         stack->data = (char*)stack->data + 1 * PENGUIN_T_SIZE;
         const PENGUIN_TYPE PENGUIN_bump = PENGUIN_CONTROL;
-        if (!memcpy((char*)stack->data + stack->capacity * stack->elem_size, &PENGUIN_bump, 
+        if (!memcpy((char*)stack->data + new_capacity * stack->elem_size, &PENGUIN_bump, 
                     PENGUIN_T_SIZE))
         {
             perror("Can't memcpy right PENGUIN");
@@ -216,14 +197,7 @@ static enum StackError stack_resize_(stack_t* stack)
 #endif /*PENGUIN_PROTECT*/
 
 #ifdef HASH_PROTECT
-        enum StackError update_stack_check_error = update_stack_check_(stack);
-        if (update_stack_check_error != STACK_ERROR_SUCCESS)
-        {
-            fprintf(stderr, "Can't update stack_check\n");
-            return update_stack_check_error;
-        }
 
-// REVIEW
         IF_PENGUIN(stack->data_check = (char*)stack->data_check - 1 * PENGUIN_T_SIZE;)
         temp_data
             = recalloc_(stack->data_check, 
@@ -237,13 +211,25 @@ static enum StackError stack_resize_(stack_t* stack)
         stack->data_check = temp_data; temp_data = NULL;
 
 #ifdef PENGUIN_PROTECT
-        if (!memcpy((char*)stack->data_check + stack->capacity * stack->elem_size, &PENGUIN_bump, 
+        stack->data_check = (char*)stack->data_check + 1 * PENGUIN_T_SIZE;
+        if (!memcpy((char*)stack->data_check + new_capacity * stack->elem_size, &PENGUIN_bump, 
                     PENGUIN_T_SIZE))
         {
             perror("Can't memcpy right PENGUIN CHECK");
             return STACK_ERROR_STANDART_ERRNO;
         }
 #endif /*PENGUIN_PROTECT*/
+#endif /*HASH_PROTECT*/
+
+        stack->capacity = new_capacity;
+
+#ifdef HASH_PROTECT
+        enum StackError update_stack_check_error = update_stack_check_(stack);
+        if (update_stack_check_error != STACK_ERROR_SUCCESS)
+        {
+            fprintf(stderr, "Can't update stack_check\n");
+            return update_stack_check_error;
+        }
 #endif /*HASH_PROTECT*/
     }
 
@@ -329,6 +315,28 @@ enum StackError stack_pop(stack_t* const stack, void* const elem)
     STACK_VERIFY(stack);
     return STACK_ERROR_SUCCESS;
 }
+
+
+enum StackError update_stack_data_check_(stack_t* const stack)
+{
+    if (!memcpy(stack->data_check, stack->data, stack->capacity * stack->elem_size))
+    {
+        perror("Can't memcpy stack->data in stack->data_check");
+        return STACK_ERROR_STANDART_ERRNO;
+    }
+    return STACK_ERROR_SUCCESS;
+}
+
+enum StackError update_stack_check_(stack_t* const stack)
+{
+    if (!memcpy(stack->stack_check, stack, STACK_T_SIZE))
+    {
+        perror("Can't memcpy stack in stack_check");
+        return STACK_ERROR_STANDART_ERRNO;
+    }
+    return STACK_ERROR_SUCCESS;
+}
+
 
 
 enum StackError stack_back(const stack_t stack, void* const elem)

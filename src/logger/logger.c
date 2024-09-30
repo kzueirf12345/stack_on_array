@@ -145,35 +145,6 @@ enum LogCode internal_func_log_(const place_in_code_t place_in_code,
     } while (0);
     
 
-    // NOTE - copypaste version
-    // if (LOGGER.output_flags & LOG_LEVEL_DETAILS_INFO & level_details)
-    // {
-    //     if (log_write_("LOG_INFO", &place_in_code, check_str, format, &args)
-    //         == LOG_CODE_FAILURE)
-    //     {  
-    //         fprintf(stderr, "log_info error\n");
-    //         return LOG_CODE_FAILURE;
-    //     }
-    // }
-    // else if(LOGGER.output_flags & LOG_LEVEL_DETAILS_ERROR & level_details)
-    // {
-    //     if (log_write_("LOG_ERROR", &place_in_code, check_str, format, &args)
-    //         == LOG_CODE_FAILURE)
-    //     {  
-    //         fprintf(stderr, "log_error error\n");
-    //         return LOG_CODE_FAILURE;
-    //     }
-    // }
-    // else if(LOGGER.output_flags & LOG_LEVEL_DETAILS_DUMB & level_details)
-    // {
-    //     if (log_write_("LOG_DUMB", NULL, check_str, format, &args)
-    //         == LOG_CODE_FAILURE)
-    //     {  
-    //         fprintf(stderr, "log_dumb error\n");
-    //         return LOG_CODE_FAILURE;
-    //     }
-    // }
-
     if(LOGGER.output_flags & LOG_LEVEL_DETAILS_LASSERT & level_details)
     {
         va_start(args, format);
