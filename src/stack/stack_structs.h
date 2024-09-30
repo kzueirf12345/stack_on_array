@@ -8,7 +8,7 @@
 
 
 #ifndef NDEBUG
-#define PENGUIN_PROTECT
+// #define PENGUIN_PROTECT
 #endif /*NDEBUG*/
 
 #define PENGUIN_CONTROL (0xBAADC0FEDEADBABEu)

@@ -247,6 +247,11 @@ static void* recalloc_(void* ptrmem, const size_t old_number, const size_t old_s
 
 static enum StackError stack_resize_data_(stack_t* stack, void** data, const size_t new_capacity)
 {
+    lassert(stack, "");
+    lassert(data, "");
+    lassert(*data, "");
+    lassert(new_capacity, "");
+    
     IF_PENGUIN(*data = (char*)*data - 1 * PENGUIN_T_SIZE;)
     void* temp_data
         = recalloc_(*data, 

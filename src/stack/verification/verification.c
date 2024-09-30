@@ -130,6 +130,7 @@ enum StackError stack_verify_func(const stack_t* const stack)
         return STACK_ERROR_DATA_CHECK_PENGUIN_RIGHT;
 #endif /*PENDUIN_PROTECT*/
 
+    // fprintf(stderr, "size: %zu\n", stack->capacity * stack->elem_size);
     if (stack_hash_(stack->data      , stack->capacity * stack->elem_size, 0) !=
         stack_hash_(stack->data_check, stack->capacity * stack->elem_size, 0))
         return STACK_ERROR_DATA_CONTROL_HASH_NEQUAL;
@@ -320,12 +321,12 @@ static enum PtrState is_valid_ptr_(const void* ptr)
 uint64_t stack_hash_(const void* const elem, size_t elem_size, size_t first_skip_size)
 {
     lassert(elem, "");
-    // lassert(elem_size, "");
     lassert(first_skip_size <= elem_size, "");
 
     uint64_t hash_val = 0;
-
-    for (size_t offset = first_skip_size; offset < elem_size; offset += sizeof(uint64_t))
+    for (size_t offset = first_skip_size;
+         offset + sizeof(uint64_t) <= elem_size; 
+         offset += sizeof(uint64_t))
     {
         hash_val = hash_val * 31 + *(const uint64_t*)((const char*)elem + offset);                                                                                                                          /*vova loh*/
     }
