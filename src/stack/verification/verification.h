@@ -268,7 +268,6 @@ const char* stack_strerror(const enum StackError error)
 
 #ifndef NDEBUG
 
-
 // NOTE - fuck this shit
 #define LOGG_AND_FPRINTF_(format, ...)                                                              \
         do {                                                                                        \
@@ -370,9 +369,11 @@ enum StackError stack_dumb_func(const stack_t* const stack, place_in_code_t plac
     fprintf(stderr, "\n");
     return STACK_ERROR_SUCCESS;
 }
+
 #undef LOGG_AND_FPRINTF_
 #undef INIT_CONST_BUF_CHECK_POISON_
 
+#endif /*NDEBUG*/
 
 static enum PtrState is_valid_ptr_(const void* ptr)
 {
@@ -416,8 +417,6 @@ uint64_t stack_hash_(const void* const elem, size_t elem_size, size_t first_skip
     return hash_val;
 }
 #endif /*HASH_PROTECT*/
-
-#endif /*NDEBUG*/
 
 
 #endif /*SRC_VERIFICATION_H*/

@@ -15,6 +15,8 @@ enum StackError stack_push(stack_t* const stack, const void* const elem);
 enum StackError stack_pop (stack_t* const stack, void* const elem);
 enum StackError stack_back(const stack_t  stack, void* const elem);
 
+bool stack_is_empty(const stack_t stack);
+
 
 //==================================================================================================
 
@@ -196,6 +198,13 @@ enum StackError stack_back(const stack_t stack, void* const elem)
     return STACK_ERROR_SUCCESS;
 }
 
+bool stack_is_empty(const stack_t stack)
+{
+    STACK_VERIFY(&stack);
+
+    return stack.size == 0;
+}
+
 //=====================================================
 
 static enum StackError stack_resize_data_(stack_t* stack, void** data, const size_t new_capacity);
@@ -352,7 +361,7 @@ static enum StackError all_check_ctor_(stack_t* const stack)
     }
 
     stack->data_check = (char*)stack->data_check + 1 * PENGUIN_T_SIZE;
-    
+
     if (!memcpy((char*)stack->data_check + stack->capacity * stack->elem_size, 
                 &PENGUIN_bump, PENGUIN_T_SIZE))
     {
