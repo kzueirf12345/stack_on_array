@@ -101,7 +101,7 @@ enum PtrState
 static_assert(PTR_STATES_VALID == 0);
 
 static enum PtrState is_valid_ptr_(const void* ptr);
-//TODO check penguins in check 
+
 enum StackError stack_verify_func(const stack_t* const stack)
 {
     switch (is_valid_ptr_(stack))

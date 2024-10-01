@@ -281,6 +281,7 @@ static enum StackError stack_resize_data_(stack_t* stack, void** data, const siz
 #ifdef PENGUIN_PROTECT
     *data = (char*)*data + 1 * PENGUIN_T_SIZE;
     const PENGUIN_TYPE PENGUIN_bump = PENGUIN_CONTROL;
+
     if (!memcpy((char*)*data + new_capacity * stack->elem_size, &PENGUIN_bump, 
                 PENGUIN_T_SIZE))
     {
@@ -349,7 +350,9 @@ static enum StackError all_check_ctor_(stack_t* const stack)
         perror("Can't memcpy left PENGUIN CHECK");
         return STACK_ERROR_STANDART_ERRNO;
     }
+
     stack->data_check = (char*)stack->data_check + 1 * PENGUIN_T_SIZE;
+    
     if (!memcpy((char*)stack->data_check + stack->capacity * stack->elem_size, 
                 &PENGUIN_bump, PENGUIN_T_SIZE))
     {

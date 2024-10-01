@@ -6,6 +6,7 @@
 #include "../stack_funcs.h"
 
 #ifdef TEST_MODE
+
 enum StackError stack_test(const size_t actions_count, const size_t elem_size);
 
 static enum StackError randn_(void* const data, const size_t size);
@@ -16,10 +17,10 @@ enum StackError stack_test(const size_t actions_count, const size_t elem_size)
 {
     lassert(actions_count, "No work - no result!");
 
-    enum StackError error_handler = STACK_ERROR_SUCCESS;
-
     logg(LOG_LEVEL_DETAILS_DUMB, "==START TEST==");
     logg(LOG_LEVEL_DETAILS_DUMB, "actions_count = %zu", actions_count);
+
+    enum StackError error_handler = STACK_ERROR_SUCCESS;
 
     stack_t stack = { STACK_INIT(stack) };
     error_handler = stack_ctor(&stack, elem_size, 0);
@@ -57,7 +58,6 @@ enum StackError stack_test(const size_t actions_count, const size_t elem_size)
                 fprintf(stderr, "Can't stack_pop\n");
                 return error_handler;
             }
-            fprintf(stderr, "pop_elem: %X\n", *(unsigned*)pop_elem);
             
             char* pop_elem_str = calloc(elem_size, 4);
             if (!pop_elem_str)
@@ -89,9 +89,8 @@ enum StackError stack_test(const size_t actions_count, const size_t elem_size)
                 fprintf(stderr, "Can't randn_ push_elem\n");
                 return error_handler;
             }
-            fprintf(stderr, "push_elem: %X\n", *(unsigned*)push_elem);
             
-            error_handler = stack_push(&stack, &push_elem);
+            error_handler = stack_push(&stack, push_elem);
             if (error_handler)
             {
                 fprintf(stderr, "Can't stack_push\n");
@@ -123,6 +122,7 @@ enum StackError stack_test(const size_t actions_count, const size_t elem_size)
             free(push_elem_str); push_elem_str = NULL;
             free(push_elem); push_elem = NULL;
         }
+
     }
     
     logg(LOG_LEVEL_DETAILS_DUMB, "PUSH_HISTORY: %s", push_history);
