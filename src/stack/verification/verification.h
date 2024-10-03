@@ -5,7 +5,6 @@
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
-// #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
@@ -60,17 +59,20 @@ const char* stack_strerror(const enum StackError error);
 
 enum StackError stack_verify_func(const stack_t* const stack);
 
-enum StackError stack_dumb_func(const stack_t* const stack, place_in_code_t place_in_code);
+void stack_dumb_func(const stack_t* const stack, place_in_code_t place_in_code,
+                     enum StackError (*elem_to_str)(const void* const elem, const size_t elem_size,
+                                                    char* const * str, const size_t mx_str_size));
 
 
-#define STACK_VERIFY(stack)                                                                         \
+#define STACK_VERIFY(stack, elem_to_str)                                                            \
     do                                                                                              \
     {                                                                                               \
         const enum StackError verify_error = stack_verify_func(stack);                              \
         if (verify_error)                                                                           \
         {                                                                                           \
             stack_dumb_func(stack, (place_in_code_t)                                                \
-                                   { .file = __FILE__, .func = __func__, .line = __LINE__ });       \
+                                   { .file = __FILE__, .func = __func__, .line = __LINE__ },        \
+                            elem_to_str);                                                           \
             lassert(false, "stack error: %s", stack_strerror(verify_error));                        \
         }                                                                                           \
     } while (0)
@@ -163,7 +165,7 @@ enum StackError stack_verify_func(const stack_t* const stack)
 
 #ifdef PENGUIN_PROTECT
 
-    const PENGUIN_TYPE PENGUIN_bump = PENGUIN_CONTROL;
+    const penguin_t PENGUIN_bump = PENGUIN_CONTROL;
 
     if (memcmp((char*)stack->data - 1 * PENGUIN_T_SIZE                , &PENGUIN_bump,
                 PENGUIN_T_SIZE))
@@ -268,20 +270,23 @@ const char* stack_strerror(const enum StackError error)
 
 #ifndef NDEBUG
 
+static enum StackError data_to_lX_str(const void* const data, const size_t size, 
+                                      char* const * lX_str);
+
 // NOTE - fuck this shit
 #define LOGG_AND_FPRINTF_(format, ...)                                                              \
         do {                                                                                        \
         logg(LOG_LEVEL_DETAILS_DUMB, format, ##__VA_ARGS__);                                        \
-        if (fprintf(stderr, format "\n", ##__VA_ARGS__) < 0)                                        \
-            return STACK_ERROR_STANDART_ERRNO;                                                      \
+        fprintf(stderr, format "\n", ##__VA_ARGS__);                                                \
         } while(0)
 
+// FIXME func
 #define INIT_CONST_BUF_CHECK_STR_(buf_name, check_str)                                              \
         const char* buf_name = NULL;                                                                \
         switch (is_valid_ptr_(check_str))                                                           \
         {                                                                                           \
         case PTR_STATES_VALID:                                                                      \
-            buf_name = NULL;                                                                        \
+            buf_name =  NULL;                                                                       \
             break;                                                                                  \
         case PTR_STATES_NULL:                                                                       \
             buf_name = "NULL";                                                                      \
@@ -295,9 +300,11 @@ const char* stack_strerror(const enum StackError error)
         default:                                                                                    \
             buf_name = "UNKNOWN";                                                                   \
             break;                                                                                  \
-        }
+        } do{} while(0)
 
-enum StackError stack_dumb_func(const stack_t* const stack, place_in_code_t place_in_code)
+void stack_dumb_func(const stack_t* const stack, place_in_code_t place_in_code,
+                     enum StackError (*elem_to_str)(const void* const elem, const size_t elem_size,
+                                                    char* const * str, const size_t mx_str_size))
 {
     LOGG_AND_FPRINTF_("==STACK DUMB==");
 
@@ -314,7 +321,7 @@ enum StackError stack_dumb_func(const stack_t* const stack, place_in_code_t plac
     {
         LOGG_AND_FPRINTF_("stack_t [%s] at %s:%d (%s())", stack_buf, file_buf, line_buf, func_buf);
         fprintf(stderr, "\n");
-        return STACK_ERROR_STACK_IS_NULL;
+        return;
     }
 
     INIT_CONST_BUF_CHECK_STR_(stack_name_buf     ,  stack->name           );
@@ -344,7 +351,7 @@ enum StackError stack_dumb_func(const stack_t* const stack, place_in_code_t plac
         LOGG_AND_FPRINTF_("\tdata[%s]", stack_data_buf);
         LOGG_AND_FPRINTF_("}");
         fprintf(stderr, "\n");
-        return STACK_ERROR_DATA_IS_NULL;
+        return;
     }
 
     LOGG_AND_FPRINTF_("\tdata[%p]", stack->data);
@@ -354,20 +361,33 @@ enum StackError stack_dumb_func(const stack_t* const stack, place_in_code_t plac
 
     for (size_t ind = 0; ind < ind_count; ++ind)
     {
-        if (ind < stack->size)
-            LOGG_AND_FPRINTF_("\t\t*[%-3zu] = %d",
-                              ind, *(int*)((char*)stack->data + ind * stack->elem_size)); 
-                              // TODO - check void* print, maybe define type with ifndef
+        char* str_elem = calloc(4, stack->elem_size);
+        if (!str_elem)
+        {
+            LOGG_AND_FPRINTF_("\t\tERROR");
+            break;
+        }
+
+        if (!elem_to_str)
+            data_to_lX_str((char*)stack->data + ind * stack->elem_size, stack->elem_size, &str_elem);
         else
-            LOGG_AND_FPRINTF_("\t\t [%-3zu] = %d",
-                              ind, *(int*)((char*)stack->data + ind * stack->elem_size));
+            elem_to_str   ((char*)stack->data + ind * stack->elem_size, stack->elem_size, &str_elem,
+                           4 * stack->elem_size);
+
+        INIT_CONST_BUF_CHECK_STR_(str_elem_buf, str_elem);
+
+        if (ind < stack->size)
+            LOGG_AND_FPRINTF_("\t\t*[%-3zu] = %s", ind, str_elem_buf ? str_elem_buf : str_elem);
+        else
+            LOGG_AND_FPRINTF_("\t\t [%-3zu] = %s", ind, str_elem_buf ? str_elem_buf : str_elem);
+            
+        free(str_elem); str_elem = NULL;
     }
 
     LOGG_AND_FPRINTF_("\t}");   
 
     LOGG_AND_FPRINTF_("}");    
     fprintf(stderr, "\n");
-    return STACK_ERROR_SUCCESS;
 }
 
 #undef LOGG_AND_FPRINTF_
@@ -377,6 +397,8 @@ enum StackError stack_dumb_func(const stack_t* const stack, place_in_code_t plac
 
 static enum PtrState is_valid_ptr_(const void* ptr)
 {
+    // TODO check errno here
+
     if (!ptr) return PTR_STATES_NULL;
 
     int fd = open(ptr, 0, 0);
@@ -392,6 +414,51 @@ static enum PtrState is_valid_ptr_(const void* ptr)
         errno = 0;
 
     return PTR_STATES_VALID;
+}
+
+static enum StackError data_to_lX_str(const void* const data, const size_t size, 
+                                      char* const * lX_str)
+{
+    lassert(data, "");
+    lassert(size, "");
+    lassert(lX_str, "");
+
+    // TODO copypaste
+    
+    char temp_str[sizeof(uint64_t) * 4] = {};
+    for (size_t offset = 0; offset + sizeof(uint64_t) <= size; offset += sizeof(uint64_t))
+    {
+        if (snprintf(temp_str, sizeof(uint64_t) * 4, "%lX", 
+                     *(const uint64_t*)((const char*)data + offset)) <= 0)
+        {
+            perror("Can't snprintf byte on temp_str");
+            return STACK_ERROR_STANDART_ERRNO;
+        }
+
+        if (!strcat(*lX_str, temp_str)) // FIXME strncat
+        {
+            perror("Can't stract lX_str and temp_str");
+            return STACK_ERROR_STANDART_ERRNO;
+        }
+    }
+
+    for (size_t offset = size - size % sizeof(uint64_t); offset < size; ++offset)
+    {
+        if (snprintf(temp_str, sizeof(uint8_t) * 4, "%lX", 
+                     *(const uint8_t*)((const char*)data + offset)) <= 0)
+        {
+            perror("Can't snprintf byte on temp_str");
+            return STACK_ERROR_STANDART_ERRNO;
+        }
+
+        if (!strcat(*lX_str, temp_str))
+        {
+            perror("Can't stract lX_str and temp_str");
+            return STACK_ERROR_STANDART_ERRNO;
+        }
+    }
+
+    return STACK_ERROR_SUCCESS;
 }
 
 #ifdef HASH_PROTECT

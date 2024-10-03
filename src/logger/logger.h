@@ -17,7 +17,7 @@ typedef struct place_in_code_t
 
 enum LogCode
 {
-    LOG_CODE_SUCCESS  = 0,
+    LOG_CODE_SUCCESS = 0,
     LOG_CODE_FAILURE = 1
 };
 static_assert(LOG_CODE_SUCCESS == 0);

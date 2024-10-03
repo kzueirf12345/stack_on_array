@@ -8,8 +8,8 @@
 
 
 #define PENGUIN_CONTROL (0xBAADC0FEDEADBABEu)
-#define PENGUIN_TYPE uint64_t
-#define PENGUIN_T_SIZE sizeof(PENGUIN_TYPE)
+typedef uint64_t penguin_t;
+#define PENGUIN_T_SIZE sizeof(penguin_t)
 
 #ifdef  PENGUIN_PROTECT
 #define IF_PENGUIN(...) __VA_ARGS__
@@ -32,7 +32,7 @@
 typedef struct stack_t
 {
 #ifdef PENGUIN_PROTECT
-    const PENGUIN_TYPE PENGUIN_LEFT_;
+    const penguin_t PENGUIN_LEFT_;
 #endif /*PENGUIN_PROTECT*/
 
 
@@ -53,7 +53,7 @@ typedef struct stack_t
 
 
 #ifdef PENGUIN_PROTECT
-    const PENGUIN_TYPE PENGUIN_RIGHT_;
+    const penguin_t PENGUIN_RIGHT_;
 #endif /*PENGUIN_PROTECT*/
 } stack_t;
 
