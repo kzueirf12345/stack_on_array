@@ -6,9 +6,6 @@
 
 #include "logger.h"
 
-// #define START_LOGGING_LINE "========START LOGGING======="
-// #define END_LOGGING_LINE   "=========END LOGGING========"
-
 
 static struct
 {

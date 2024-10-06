@@ -2,6 +2,17 @@
 
 // TODO - README
 
+#define error_handle(call_func, ...)                                                                \
+    do{                                                                                             \
+    error_handler = call_func;                                                                      \
+    if (error_handler)                                                                              \
+    {                                                                                               \
+        fprintf(stderr, "Can't " #call_func ". Error: %s", strerror(error_handler));                \
+        __VA_ARGS__;                                                                                \
+        return EXIT_FAILURE;                                                                        \
+    }                                                                                               \
+    }while(0)
+
 int main()
 {
     enum StackError error_handler = STACK_ERROR_SUCCESS;
@@ -18,6 +29,7 @@ int main()
 
     //----------------------------------------------------------
 
+
 #ifdef TEST_MODE
 
     const size_t COUNT_TEST_ACTIONS = 10;
@@ -28,6 +40,15 @@ int main()
         fprintf(stderr, "Can't stack_test. Error: %s\n", strerror(error_handler));
         return EXIT_FAILURE;
     }
+    
+#else /*TEST_MODE*/
+
+    //FIXME - жук
+    stack_t stack = { STACK_INIT(stack) };
+    error_handle(stack_ctor(&stack, 100, 200), stack_dtor(&stack), logger_dtor());
+    size_t elem = 123;
+    error_handle(stack_push(&stack, &elem));
+    stack_dtor(&stack);
 
 #endif /*TEST_MODE*/
 

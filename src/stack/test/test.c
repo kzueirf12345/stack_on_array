@@ -4,9 +4,9 @@
 
 static enum StackError randn_(void* const data, const size_t size);
 
-static enum StackError handle_pop_(stack_t* const stack_t, const size_t elem_size, 
+static enum StackError handle_pop_(const uint64_t* const stack, const size_t elem_size, 
                                    const size_t action_ind);
-static enum StackError handle_push_(stack_t* const stack, const size_t elem_size,
+static enum StackError handle_push_(const uint64_t* const stack, const size_t elem_size,
                                     const size_t action_ind, char** push_history);
 
 enum StackError stack_test(const size_t actions_count, const size_t elem_size)
@@ -18,14 +18,13 @@ enum StackError stack_test(const size_t actions_count, const size_t elem_size)
 
     enum StackError error_handler = STACK_ERROR_SUCCESS;
 
-    stack_t stack = { STACK_INIT(stack) };
-    error_handler = stack_ctor(&stack, elem_size, 0);
+    uint64_t stack = 0;
+    error_handler = STACK_CTOR(&stack, elem_size, 0);
     if (error_handler)
     {
         fprintf(stderr, "Can't stack_ctor\n");
         return error_handler;
     }
-    STACK_VERIFY(&stack, NULL);
 
     char* push_history = calloc(actions_count, 2 * elem_size + 1);
     if (!push_history)
@@ -70,7 +69,6 @@ enum StackError stack_test(const size_t actions_count, const size_t elem_size)
     logg(LOG_LEVEL_DETAILS_DUMB, "PUSH_HISTORY: %s", push_history);
     free(push_history); push_history = NULL;
 
-    STACK_VERIFY(&stack, NULL);
     stack_dtor(&stack);
 
     return STACK_ERROR_SUCCESS;
@@ -93,10 +91,10 @@ static enum StackError randn_(void* const data, const size_t size)
     return STACK_ERROR_SUCCESS;
 }
 
-static enum StackError handle_pop_(stack_t* const stack, const size_t elem_size, 
+static enum StackError handle_pop_(const uint64_t* const stack, const size_t elem_size, 
                                    const size_t action_ind)
 {
-    STACK_VERIFY(stack, NULL);
+    lassert(stack, "");
     lassert(elem_size, "");
 
     enum StackError error_handler = STACK_ERROR_SUCCESS;
@@ -133,15 +131,15 @@ static enum StackError handle_pop_(stack_t* const stack, const size_t elem_size,
     free(pop_elem_str); pop_elem_str = NULL;
     free(pop_elem); pop_elem = NULL;
 
-    STACK_VERIFY(stack, NULL);
     return error_handler;
 }
 
-static enum StackError handle_push_(stack_t* const stack, const size_t elem_size,
+static enum StackError handle_push_(const uint64_t* const stack, const size_t elem_size,
                                     const size_t action_ind, char** push_history)
 {
-    STACK_VERIFY(stack, NULL);
+    lassert(stack, "");
     lassert(elem_size, "");
+    lassert(push_history, "");
 
     enum StackError error_handler = STACK_ERROR_SUCCESS;
 
@@ -175,7 +173,7 @@ static enum StackError handle_push_(stack_t* const stack, const size_t elem_size
     }
     logg(LOG_LEVEL_DETAILS_DUMB, "Actions №%-3zu. PUSH: 0x%s", action_ind,  push_elem_str);
 
-    
+    lassert(*push_history, "");
     if (!strcat(strcat(strcat(*push_history, "0x"), push_elem_str), " "))
     {
         perror("Can't memcpu push_elem to push_history");

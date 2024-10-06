@@ -7,6 +7,11 @@
 #include "../config.h"
 #include "../logger/logger.h"
 
+#ifdef NDEBUG
+#undef PENGUIN_PROTECT
+#undef HASH_PROTECT
+#endif /*NDEBUG*/
+
 
 #define PENGUIN_CONTROL (0xBAADC0FEDEADBABEu)
 typedef uint64_t penguin_t;
@@ -33,7 +38,7 @@ typedef uint64_t penguin_t;
 typedef struct stack_t
 {
 #ifdef PENGUIN_PROTECT
-    const penguin_t PENGUIN_LEFT_;
+    penguin_t PENGUIN_LEFT_;
 #endif /*PENGUIN_PROTECT*/
 
 
@@ -43,7 +48,7 @@ typedef struct stack_t
 #endif /*HASH_PROTECT*/
 
 #ifndef NDEBUG
-    const char* const name;
+    const char* name;
     place_in_code_t place_burn;
 #endif /*NDEBUG*/
 
@@ -54,34 +59,11 @@ typedef struct stack_t
 
 
 #ifdef PENGUIN_PROTECT
-    const penguin_t PENGUIN_RIGHT_;
+    penguin_t PENGUIN_RIGHT_;
 #endif /*PENGUIN_PROTECT*/
 } stack_t;
 
 #define STACK_T_SIZE sizeof(stack_t)
-
-
-#ifndef NDEBUG
-#ifndef PENGUIN_PROTECT
-
-#define STACK_INIT(name_)                                                                           \
-        .name = #name_,                                                                             \
-        .place_burn = (place_in_code_t){ .file = __FILE__, .func = __func__, .line = __LINE__ }
-
-#else  /*PENGUIN_PROTECT*/
-
-#define STACK_INIT(name_)                                                                           \
-        .PENGUIN_LEFT_ = PENGUIN_CONTROL,                                                           \
-        .name = #name_,                                                                             \
-        .place_burn = (place_in_code_t){ .file = __FILE__, .func = __func__, .line = __LINE__, },   \
-        .PENGUIN_RIGHT_ = PENGUIN_CONTROL
-
-#endif /*PENGUIN_PROTECT*/
-#else  /*NDEBUG*/
-
-#define STACK_INIT(name)
-
-#endif /*NDEBUG*/
 
 
 #endif /*SRC_STACK_STRUCTS_H*/
