@@ -54,7 +54,8 @@ static_assert(STACK_ERROR_SUCCESS == 0);
 
 const char* stack_strerror(const enum StackError error);
 
-enum StackError data_to_lX_str(const void* const data, const size_t size, char* const * lX_str);
+enum StackError data_to_lX_str(const void* const data, const size_t size, char* const * lX_str,
+                               const size_t lX_str_size);
 
 
 #ifndef NDEBUG

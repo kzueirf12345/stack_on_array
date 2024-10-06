@@ -57,41 +57,38 @@ const char* stack_strerror(const enum StackError error)
 }
 #undef CASE_ENUM_TO_STRING_
 
-enum StackError data_to_lX_str(const void* const data, const size_t size, char* const * lX_str)
+
+enum StackError data_to_lX_str(const void* const data, const size_t size, char* const * lX_str,
+                               const size_t lX_str_size)
 {
     lassert(data, "");
     lassert(size, "");
     lassert(lX_str, "");
-
-    // TODO copypaste
     
     char temp_str[sizeof(uint64_t) * 4] = {};
-    for (size_t offset = 0; offset + sizeof(uint64_t) <= size; offset += sizeof(uint64_t))
+    for (size_t offset = 0; offset < size; 
+         offset += (size - offset >= sizeof(uint64_t) ? sizeof(uint64_t) : sizeof(uint8_t)))
     {
-        if (snprintf(temp_str, sizeof(uint64_t) * 4, "%lX", 
-                     *(const uint64_t*)((const char*)data + offset)) <= 0)
+        if (size - offset >= sizeof(uint64_t))
         {
-            perror("Can't snprintf byte on temp_str");
-            return STACK_ERROR_STANDART_ERRNO;
+            if (snprintf(temp_str, sizeof(uint64_t) * 4, "%lX", 
+                         *(const uint64_t*)((const char*)data + offset)) <= 0)
+            {
+                perror("Can't snprintf byte on temp_str");
+                return STACK_ERROR_STANDART_ERRNO;
+            }
+        }
+        else
+        {
+            if (snprintf(temp_str, sizeof(uint8_t) * 4, "%lX", 
+                         *(const uint8_t*)((const char*)data + offset)) <= 0)
+            {
+                perror("Can't snprintf byte on temp_str");
+                return STACK_ERROR_STANDART_ERRNO;
+            }
         }
 
-        if (!strcat(*lX_str, temp_str)) // FIXME strncat
-        {
-            perror("Can't stract lX_str and temp_str");
-            return STACK_ERROR_STANDART_ERRNO;
-        }
-    }
-
-    for (size_t offset = size - size % sizeof(uint64_t); offset < size; ++offset)
-    {
-        if (snprintf(temp_str, sizeof(uint8_t) * 4, "%lX", 
-                     *(const uint8_t*)((const char*)data + offset)) <= 0)
-        {
-            perror("Can't snprintf byte on temp_str");
-            return STACK_ERROR_STANDART_ERRNO;
-        }
-
-        if (!strcat(*lX_str, temp_str))
+        if (!strncat(*lX_str, temp_str, lX_str_size))
         {
             perror("Can't stract lX_str and temp_str");
             return STACK_ERROR_STANDART_ERRNO;
@@ -224,6 +221,9 @@ enum StackError stack_verify_func(const stack_t* const stack)
     return STACK_ERROR_SUCCESS;
 }
 
+
+static const char* handle_invalid_ptr_(const void* const check_ptr);
+
 // NOTE - fuck this shit
 #define LOGG_AND_FPRINTF_(format, ...)                                                              \
         do {                                                                                        \
@@ -231,42 +231,20 @@ enum StackError stack_verify_func(const stack_t* const stack)
         fprintf(stderr, format "\n", ##__VA_ARGS__);                                                \
         } while(0)
 
-// FIXME func
-#define INIT_CONST_BUF_CHECK_STR_(buf_name, check_str)                                              \
-        const char* buf_name = NULL;                                                                \
-        switch (is_valid_ptr_(check_str))                                                           \
-        {                                                                                           \
-        case PTR_STATES_VALID:                                                                      \
-            buf_name =  NULL;                                                                       \
-            break;                                                                                  \
-        case PTR_STATES_NULL:                                                                       \
-            buf_name = "NULL";                                                                      \
-            break;                                                                                  \
-        case PTR_STATES_INVALID:                                                                    \
-            buf_name = "INVALID";                                                                   \
-            break;                                                                                  \
-        case PTR_STATES_ERROR:                                                                      \
-            buf_name = "ERROR";                                                                     \
-            break;                                                                                  \
-        default:                                                                                    \
-            buf_name = "UNKNOWN";                                                                   \
-            break;                                                                                  \
-        } do{} while(0)
-
 void stack_dumb_func(const stack_t* const stack, place_in_code_t place_in_code,
                      enum StackError (*elem_to_str)(const void* const elem, const size_t elem_size,
                                                     char* const * str, const size_t mx_str_size))
 {
     LOGG_AND_FPRINTF_("==STACK DUMB==");
 
-    INIT_CONST_BUF_CHECK_STR_(stack_buf, stack);
-    INIT_CONST_BUF_CHECK_STR_(file_buf , place_in_code.file);
-    INIT_CONST_BUF_CHECK_STR_(func_buf , place_in_code.func);
-    file_buf = file_buf ? file_buf : place_in_code.file;
-    func_buf = func_buf ? func_buf : place_in_code.func;
-    const int             line_buf = place_in_code.line <= 0
-                                     ? CODE_LINE_POISON
-                                     : place_in_code.line;
+    const char* stack_buf = handle_invalid_ptr_(stack);
+    const char* file_buf  = handle_invalid_ptr_(place_in_code.file);
+    const char* func_buf  = handle_invalid_ptr_(place_in_code.func);
+    file_buf =  file_buf  ? file_buf :          place_in_code.file;
+    func_buf =  func_buf  ? func_buf :          place_in_code.func;
+    const int   line_buf  =                     place_in_code.line <= 0
+                                                ? CODE_LINE_POISON
+                                                : place_in_code.line;
 
     if (stack_buf)
     {
@@ -275,9 +253,9 @@ void stack_dumb_func(const stack_t* const stack, place_in_code_t place_in_code,
         return;
     }
 
-    INIT_CONST_BUF_CHECK_STR_(stack_name_buf     ,  stack->name           );
-    INIT_CONST_BUF_CHECK_STR_(stack_file_burn_buf,  stack->place_burn.file);
-    INIT_CONST_BUF_CHECK_STR_(stack_func_burn_buf,  stack->place_burn.func);
+    const char*           stack_name_buf      = handle_invalid_ptr_(stack->name           );
+    const char*           stack_file_burn_buf = handle_invalid_ptr_(stack->place_burn.file);
+    const char*           stack_func_burn_buf = handle_invalid_ptr_(stack->place_burn.func);
     stack_name_buf      = stack_name_buf      ? stack_name_buf      : stack->name;
     stack_file_burn_buf = stack_file_burn_buf ? stack_file_burn_buf : stack->place_burn.file;
     stack_func_burn_buf = stack_func_burn_buf ? stack_func_burn_buf : stack->place_burn.func;
@@ -296,7 +274,7 @@ void stack_dumb_func(const stack_t* const stack, place_in_code_t place_in_code,
     LOGG_AND_FPRINTF_("\tsize      = %zu", stack->size);
     LOGG_AND_FPRINTF_("\tcapacity  = %zu", stack->capacity);
 
-    INIT_CONST_BUF_CHECK_STR_(stack_data_buf, stack->data);
+    const char* stack_data_buf = handle_invalid_ptr_(stack->data);
     if (stack_data_buf)
     {
         LOGG_AND_FPRINTF_("\tdata[%s]", stack_data_buf);
@@ -320,12 +298,13 @@ void stack_dumb_func(const stack_t* const stack, place_in_code_t place_in_code,
         }
 
         if (!elem_to_str)
-            data_to_lX_str((char*)stack->data + ind * stack->elem_size, stack->elem_size, &str_elem);
+            data_to_lX_str((char*)stack->data + ind * stack->elem_size, stack->elem_size, &str_elem,
+                           4 * stack->elem_size);
         else
             elem_to_str   ((char*)stack->data + ind * stack->elem_size, stack->elem_size, &str_elem,
                            4 * stack->elem_size);
 
-        INIT_CONST_BUF_CHECK_STR_(str_elem_buf, str_elem);
+        const char* str_elem_buf = handle_invalid_ptr_(str_elem);
 
         if (ind < stack->size)
             LOGG_AND_FPRINTF_("\t\t*[%-3zu] = %s", ind, str_elem_buf ? str_elem_buf : str_elem);
@@ -340,15 +319,34 @@ void stack_dumb_func(const stack_t* const stack, place_in_code_t place_in_code,
     LOGG_AND_FPRINTF_("}");    
     fprintf(stderr, "\n");
 }
-
 #undef LOGG_AND_FPRINTF_
-#undef INIT_CONST_BUF_CHECK_POISON_
+
+static const char* handle_invalid_ptr_(const void* const check_ptr)
+{
+    switch (is_valid_ptr_(check_ptr))
+    {
+    case PTR_STATES_VALID:
+        return NULL;
+    case PTR_STATES_NULL:
+        return "NULL";
+    case PTR_STATES_INVALID:
+        return "INVALID";
+    case PTR_STATES_ERROR:
+        return "ERROR";
+    default:
+        return "UNKNOWN";
+    }
+
+    return "MIPT SHIT";
+}
 
 #endif /*NDEBUG*/
 
+
 static enum PtrState is_valid_ptr_(const void* ptr)
 {
-    // TODO check errno here
+    if (errno)
+        return PTR_STATES_ERROR;
 
     if (!ptr) return PTR_STATES_NULL;
 

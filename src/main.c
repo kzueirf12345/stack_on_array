@@ -21,7 +21,7 @@ int main()
 #ifdef TEST_MODE
 
     const size_t COUNT_TEST_ACTIONS = 10;
-    const size_t TEST_ELEM_SIZE = 8;
+    const size_t TEST_ELEM_SIZE = 50;
     error_handler = stack_test(COUNT_TEST_ACTIONS, TEST_ELEM_SIZE);
     if (error_handler)
     {

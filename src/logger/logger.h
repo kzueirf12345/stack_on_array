@@ -57,7 +57,7 @@ enum LogCode internal_func_log_(const place_in_code_t place_in_code,
         } while (0)
 
 
-#ifndef NDEBUG //TODO - lverify and nlverify
+#ifndef NDEBUG
 
 #define LASSERT_INTERNAL_(check, log_level_details, format, ...)                                    \
         do                                                                                          \

@@ -42,7 +42,7 @@ enum StackError stack_test(const size_t actions_count, const size_t elem_size)
         if (do_pop)
         {
             --possible_pop_count;
-            // stack.capacity = stack.size - 1;//FIXME
+            // stack.size = stack.capacity + 1; //FIXME
             
             error_handler = handle_pop_(&stack, elem_size, action_ind);
             if (error_handler)
@@ -121,7 +121,7 @@ static enum StackError handle_pop_(stack_t* const stack, const size_t elem_size,
         return STACK_ERROR_STANDART_ERRNO;
     }
 
-    error_handler = data_to_lX_str(pop_elem, elem_size, &pop_elem_str);
+    error_handler = data_to_lX_str(pop_elem, elem_size, &pop_elem_str, elem_size * 4);
     if (error_handler)
     {
         fprintf(stderr, "Can't data_to_lX_str");
@@ -166,7 +166,7 @@ static enum StackError handle_push_(stack_t* const stack, const size_t elem_size
         return STACK_ERROR_STANDART_ERRNO;
     }
 
-    error_handler = data_to_lX_str(push_elem, elem_size, &push_elem_str);
+    error_handler = data_to_lX_str(push_elem, elem_size, &push_elem_str, 4 * elem_size);
     if (error_handler)
     {
         fprintf(stderr, "Can't data_to_lX_str");
