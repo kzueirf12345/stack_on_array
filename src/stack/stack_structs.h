@@ -38,8 +38,8 @@ typedef struct stack_t
 
 
 #ifdef HASH_PROTECT
-    struct stack_t* stack_check;
-    void* data_check;
+    uint64_t stack_hash;
+    uint64_t data_hash;
 #endif /*HASH_PROTECT*/
 
 #ifndef NDEBUG

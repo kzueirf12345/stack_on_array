@@ -1,14 +1,8 @@
 #include "stack_funcs.h"
 
 
-#ifdef HASH_PROTECT
-static enum StackError update_stack_data_check_(stack_t* const stack);
-static enum StackError update_stack_check_     (stack_t* const stack);
-static enum StackError update_all_check_       (stack_t* const stack);
-
-static enum StackError all_check_ctor_(stack_t* const stack);
-static void            all_check_dtor_(stack_t* const stack);
-#endif /*HASH_PROTECT*/
+IF_HASH(static uint64_t stack_hash_(const void* const elem, const size_t elem_size, 
+                                    const size_t first_skip_size);)
 
 
 enum StackError stack_ctor(stack_t* const stack, const size_t elem_size, 
@@ -41,20 +35,10 @@ enum StackError stack_ctor(stack_t* const stack, const size_t elem_size,
     }
 #endif /*PENGUIN_PROTECT*/
 
-#ifdef HASH_PROTECT     
-    enum StackError check_ctor_error = all_check_ctor_(stack);
-    if (check_ctor_error != STACK_ERROR_SUCCESS)
-    {
-        fprintf(stderr, "Can't construct check\n");
-        return check_ctor_error;
-    }
-
-    enum StackError update_check_error = update_all_check_(stack);
-    if (update_check_error != STACK_ERROR_SUCCESS)
-    {
-        fprintf(stderr, "Can't update check\n");
-        return update_check_error;
-    }
+#ifdef HASH_PROTECT
+    stack->data_hash  = stack_hash_(stack->data, stack->capacity * stack->elem_size, 0);
+    stack->stack_hash = stack_hash_(stack, STACK_T_SIZE, 
+                                    IF_PENGUIN(PENGUIN_T_SIZE) + 2 * sizeof(uint64_t));
 #endif /*HASH_PROTECT*/
     
     STACK_VERIFY(stack, NULL);
@@ -70,7 +54,6 @@ void stack_dtor(stack_t* const stack)
     stack->elem_size = 0;
     IF_PENGUIN(stack->data = (char*)stack->data - 1 * PENGUIN_T_SIZE;)
     free(stack->data); stack->data = NULL;
-    IF_HASH(all_check_dtor_(stack);)
 }
 
 //=====================================================
@@ -97,12 +80,9 @@ enum StackError stack_push(stack_t* const stack, const void* const elem)
     ++stack->size;
 
 #ifdef HASH_PROTECT
-    enum StackError update_check_error = update_all_check_(stack);
-    if (update_check_error != STACK_ERROR_SUCCESS)
-    {
-        fprintf(stderr, "Can't update check\n");
-        return update_check_error;
-    }
+    stack->data_hash  = stack_hash_(stack->data, stack->capacity * stack->elem_size, 0);
+    stack->stack_hash = stack_hash_(stack, STACK_T_SIZE, 
+                                    IF_PENGUIN(PENGUIN_T_SIZE) + 2 * sizeof(uint64_t));
 #endif /*HASH_PROTECT*/
 
     STACK_VERIFY(stack, NULL);
@@ -130,14 +110,9 @@ enum StackError stack_pop(stack_t* const stack, void* const elem)
     --stack->size;
 
 #ifdef HASH_PROTECT
-    --stack->stack_check->size;
-
-    enum StackError update_check_error = update_stack_data_check_(stack);
-    if (update_check_error != STACK_ERROR_SUCCESS)
-    {
-        fprintf(stderr, "Can't update check\n");
-        return update_check_error;
-    }
+    stack->data_hash  = stack_hash_(stack->data, stack->capacity * stack->elem_size, 0);
+    stack->stack_hash = stack_hash_(stack, STACK_T_SIZE, 
+                                    IF_PENGUIN(PENGUIN_T_SIZE) + 2 * sizeof(uint64_t));
 #endif /*HASH_PROTECT*/
 
     const enum StackError stack_resize_error = stack_resize_(stack);
@@ -148,12 +123,9 @@ enum StackError stack_pop(stack_t* const stack, void* const elem)
     }
 
 #ifdef HASH_PROTECT
-    enum StackError update_stack_check_error1 = update_stack_check_(stack);
-    if (update_stack_check_error1 != STACK_ERROR_SUCCESS)
-    {
-        fprintf(stderr, "Can't update stack_check\n");
-        return update_stack_check_error1;
-    }
+    stack->data_hash  = stack_hash_(stack->data, stack->capacity * stack->elem_size, 0);
+    stack->stack_hash = stack_hash_(stack, STACK_T_SIZE, 
+                                    IF_PENGUIN(PENGUIN_T_SIZE) + 2 * sizeof(uint64_t));
 #endif /*HASH_PROTECT*/
 
     STACK_VERIFY(stack, NULL);
@@ -185,7 +157,7 @@ bool stack_is_empty(const stack_t stack)
 
 //=====================================================
 
-static enum StackError stack_resize_data_(stack_t* stack, void** data, const size_t new_capacity);
+static enum StackError stack_resize_data_(const stack_t* const stack, void** data, const size_t new_capacity);
 
 static enum StackError stack_resize_(stack_t* stack)
 {
@@ -215,27 +187,13 @@ static enum StackError stack_resize_(stack_t* stack)
             return stack_resize_data_error;
         }
 
-#ifdef HASH_PROTECT
-        enum StackError stack_resize_data_check_error 
-                = stack_resize_data_(stack, &stack->data_check, new_capacity);
-        if (stack_resize_data_check_error != STACK_ERROR_SUCCESS)
-        {
-            fprintf(stderr, "Can't stack_resize_data_check\n");
-            return stack_resize_data_check_error;
-        }
-#endif /*HASH_PROTECT*/
-
         stack->capacity = new_capacity;
 
 #ifdef HASH_PROTECT
-        enum StackError update_stack_check_error = update_stack_check_(stack);
-        if (update_stack_check_error != STACK_ERROR_SUCCESS)
-        {
-            fprintf(stderr, "Can't update stack_check\n");
-            return update_stack_check_error;
-        }
+    stack->data_hash  = stack_hash_(stack->data, stack->capacity * stack->elem_size, 0);
+    stack->stack_hash = stack_hash_(stack, STACK_T_SIZE, 
+                                    IF_PENGUIN(PENGUIN_T_SIZE) + 2 * sizeof(uint64_t));
 #endif /*HASH_PROTECT*/
-
     }
 
     STACK_VERIFY(stack, NULL);
@@ -246,7 +204,7 @@ static enum StackError stack_resize_(stack_t* stack)
 static void* recalloc_(void* ptrmem, const size_t old_number, const size_t old_size,
                                      const size_t     number, const size_t     size);
 
-static enum StackError stack_resize_data_(stack_t* stack, void** data, const size_t new_capacity)
+static enum StackError stack_resize_data_(const stack_t* const stack, void** data, const size_t new_capacity)
 {
     lassert(stack, "");
     lassert(data, "");
@@ -307,104 +265,29 @@ static void* recalloc_(void* ptrmem, const size_t old_number, const size_t old_s
     return ptrmem;
 }
 
-//=====================================================
+
 
 #ifdef HASH_PROTECT
-
-// FIXME remove second stack
-static enum StackError all_check_ctor_(stack_t* const stack)
+static uint64_t stack_hash_(const void* const elem, const size_t elem_size, 
+                            const size_t first_skip_size)
 {
-    lassert(stack, "");
+    lassert(elem, "");
+    lassert(first_skip_size <= elem_size, "");
 
-    stack->stack_check = calloc(1, STACK_T_SIZE);
-    if (!stack->stack_check)
+    uint64_t hash_val = 0;
+    for (size_t offset = first_skip_size;
+         offset + sizeof(uint64_t) <= elem_size; 
+         offset += sizeof(uint64_t))
     {
-        perror("Can't calloc stack_check");
-        return STACK_ERROR_STANDART_ERRNO;
+        hash_val = hash_val * 31 + *(const uint64_t*)((const char*)elem + offset);                                                                                                                          /*vova loh*/
     }
 
-    stack->data_check = calloc(1, stack->elem_size * stack->capacity IF_PENGUIN(+ 2 * PENGUIN_T_SIZE));
-    if (!stack->data_check)
+    const size_t remainder = elem_size % sizeof(uint64_t);
+    for (size_t offset = elem_size - remainder; offset < elem_size; ++offset)
     {
-        perror("Can't calloc stack->data_check");
-        return STACK_ERROR_STANDART_ERRNO;
+        hash_val = hash_val * 31 + *(const uint8_t*)((const char*)elem + offset);
     }
 
-#ifdef PENGUIN_PROTECT
-    const penguin_t PENGUIN_bump = PENGUIN_CONTROL;
-
-    if (!memcpy((char*)stack->data_check, &PENGUIN_bump, PENGUIN_T_SIZE))
-    {
-        perror("Can't memcpy left PENGUIN CHECK");
-        return STACK_ERROR_STANDART_ERRNO;
-    }
-
-    stack->data_check = (char*)stack->data_check + 1 * PENGUIN_T_SIZE;
-
-    if (!memcpy((char*)stack->data_check + stack->capacity * stack->elem_size, 
-                &PENGUIN_bump, PENGUIN_T_SIZE))
-    {
-        perror("Can't memcpy right PENGUIN CHECK");
-        return STACK_ERROR_STANDART_ERRNO;
-    }
-#endif /*PENGUIN_PROTECT*/
-
-    return STACK_ERROR_SUCCESS;
+    return hash_val;
 }
-
-static void all_check_dtor_(stack_t* const stack)
-{
-    lassert(stack, "");
-    
-    free(stack->stack_check); stack->stack_check = NULL;
-    IF_PENGUIN(stack->data_check = (char*)stack->data_check - 1 * PENGUIN_T_SIZE;)
-    free(stack->data_check); stack->data_check = NULL;
-}
-
-
-static enum StackError update_all_check_(stack_t* const stack)
-{
-    lassert(stack, "");
-
-    enum StackError update_stack_check_error = update_stack_check_(stack);
-    if (update_stack_check_error != STACK_ERROR_SUCCESS)
-    {
-        fprintf(stderr, "Can't update stack_check\n");
-        return update_stack_check_error;
-    }
-
-    enum StackError update_stack_data_check_error = update_stack_data_check_(stack);
-    if (update_stack_data_check_error != STACK_ERROR_SUCCESS)
-    {
-        fprintf(stderr, "Can't update stack_data_check\n");
-        return update_stack_data_check_error;
-    }
-
-    return STACK_ERROR_SUCCESS;
-}
-
-static enum StackError update_stack_data_check_(stack_t* const stack)
-{
-    lassert(stack, "");
-
-    if (!memcpy(stack->data_check, stack->data, stack->capacity * stack->elem_size))
-    {
-        perror("Can't memcpy stack->data in stack->data_check");
-        return STACK_ERROR_STANDART_ERRNO;
-    }
-    return STACK_ERROR_SUCCESS;
-}
-
-static enum StackError update_stack_check_(stack_t* const stack)
-{
-    lassert(stack, "");
-
-    if (!memcpy(stack->stack_check, stack, STACK_T_SIZE))
-    {
-        perror("Can't memcpy stack in stack_check");
-        return STACK_ERROR_STANDART_ERRNO;
-    }
-    return STACK_ERROR_SUCCESS;
-}
-
 #endif /*HASH_PROTECT*/

@@ -43,6 +43,7 @@ enum StackError stack_test(const size_t actions_count, const size_t elem_size)
         {
             --possible_pop_count;
             // stack.size = stack.capacity + 1; //FIXME
+            // *(uint64_t*)(stack.data) = 5;
             
             error_handler = handle_pop_(&stack, elem_size, action_ind);
             if (error_handler)

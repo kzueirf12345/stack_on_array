@@ -9,7 +9,7 @@ typedef struct place_in_code_t
 {
     const char* const file;
     const char* const func;
-    int line;
+    const int line;
 } place_in_code_t;
 
 #define CODE_LINE_POISON -228666
