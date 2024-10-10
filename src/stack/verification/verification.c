@@ -25,7 +25,7 @@ const char* stack_strerror(const enum StackError error)
         CASE_ENUM_TO_STRING_(STACK_ERROR_CAPACITY_OVERFLOW);
         CASE_ENUM_TO_STRING_(STACK_ERROR_STACK_IS_NULL);
         CASE_ENUM_TO_STRING_(STACK_ERROR_STACK_IS_INVALID);
-        CASE_ENUM_TO_STRING_(STACK_ERROR_STANDART_ERRNO);
+        CASE_ENUM_TO_STRING_(STACK_ERROR_STANDARD_ERRNO);
         CASE_ENUM_TO_STRING_(STACK_ERROR_ELEM_SIZE_OVERFLOW);
         CASE_ENUM_TO_STRING_(STACK_ERROR_ELEM_SIZE_IS_NULL);
 #ifdef PENGUIN_PROTECT
@@ -67,7 +67,7 @@ enum StackError data_to_lX_str(const void* const data, const size_t size, char* 
                          *(const uint64_t*)((const char*)data + offset)) <= 0)
             {
                 perror("Can't snprintf byte on temp_str");
-                return STACK_ERROR_STANDART_ERRNO;
+                return STACK_ERROR_STANDARD_ERRNO;
             }
         }
         else
@@ -76,14 +76,14 @@ enum StackError data_to_lX_str(const void* const data, const size_t size, char* 
                          *(const uint8_t*)((const char*)data + offset)) <= 0)
             {
                 perror("Can't snprintf byte on temp_str");
-                return STACK_ERROR_STANDART_ERRNO;
+                return STACK_ERROR_STANDARD_ERRNO;
             }
         }
 
         if (!strncat(*lX_str, temp_str, lX_str_size))
         {
             perror("Can't stract lX_str and temp_str");
-            return STACK_ERROR_STANDART_ERRNO;
+            return STACK_ERROR_STANDARD_ERRNO;
         }
     }
 
@@ -107,7 +107,7 @@ enum StackError stack_verify_func(const stack_t* const stack)
     case PTR_STATES_INVALID:
         return STACK_ERROR_STACK_IS_INVALID;
     case PTR_STATES_ERROR:
-        return STACK_ERROR_STANDART_ERRNO;
+        return STACK_ERROR_STANDARD_ERRNO;
     
     default:
         fprintf(stderr, "Unknown PtrState enum, it's soooo bad\n");
@@ -132,20 +132,20 @@ enum StackError stack_verify_func(const stack_t* const stack)
     case PTR_STATES_INVALID:
         return STACK_ERROR_STACK_IS_INVALID;
     case PTR_STATES_ERROR:
-        return STACK_ERROR_STANDART_ERRNO;
+        return STACK_ERROR_STANDARD_ERRNO;
     
     default:
         fprintf(stderr, "Unknown PtrState enum, it's soooo bad\n");
         return STACK_ERROR_UNKNOWN;
     }
 
-    if (stack->elem_size > STACK_MAX_ELEM_SIZE_VALUE)
+    if (stack->elem_size > STACK_MAX_ELEM_SIZE)
         return STACK_ERROR_ELEM_SIZE_OVERFLOW;
 
-    if (stack->size > STACK_MAX_SIZE_VALUE)
+    if (stack->size > STACK_MAX_SIZE)
         return STACK_ERROR_SIZE_OVERFLOW;
 
-    if (stack->capacity > STACK_MAX_CAPACITY_VALUE)
+    if (stack->capacity > STACK_MAX_CAPACITY)
         return STACK_ERROR_CAPACITY_OVERFLOW;
     
     if (stack->elem_size == 0)
@@ -181,7 +181,7 @@ enum StackError stack_verify_func(const stack_t* const stack)
     
     
     if (errno)
-        return STACK_ERROR_STANDART_ERRNO;
+        return STACK_ERROR_STANDARD_ERRNO;
 
     return STACK_ERROR_SUCCESS;
 }

@@ -12,9 +12,9 @@
 #include "../stack_structs.h"
 
 
-#define STACK_MAX_SIZE_VALUE      1000000u
-#define STACK_MAX_CAPACITY_VALUE  1000000u
-#define STACK_MAX_ELEM_SIZE_VALUE 1000000u
+#define STACK_MAX_SIZE      1000000u
+#define STACK_MAX_CAPACITY  1000000u
+#define STACK_MAX_ELEM_SIZE 1000000u
 
 enum StackError
 {
@@ -24,7 +24,7 @@ enum StackError
     STACK_ERROR_SIZE_OVERFLOW             = 3,
     STACK_ERROR_CAPACITY_OVERFLOW         = 4,
     STACK_ERROR_STACK_IS_NULL             = 5,
-    STACK_ERROR_STANDART_ERRNO            = 6,
+    STACK_ERROR_STANDARD_ERRNO            = 6,
     STACK_ERROR_DATA_IS_INVALID           = 7,
     STACK_ERROR_STACK_IS_INVALID          = 8,
     STACK_ERROR_ELEM_SIZE_OVERFLOW        = 9,
@@ -77,9 +77,6 @@ void stack_dumb_func(const stack_t* const stack, place_in_code_t place_in_code,
 #define STACK_VERIFY(stack) do {} while (0)
 
 #endif /*NDEBUG*/
-
-
-//=================================================================================================
 
 
 #endif /*SRC_VERIFICATION_H*/

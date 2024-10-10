@@ -7,7 +7,7 @@
     error_handler = call_func;                                                                      \
     if (error_handler)                                                                              \
     {                                                                                               \
-        fprintf(stderr, "Can't " #call_func ". Error: %s", strerror(error_handler));                \
+        fprintf(stderr, "Can't " #call_func ". Error: %s\n", stack_strerror(error_handler));        \
         __VA_ARGS__;                                                                                \
         return EXIT_FAILURE;                                                                        \
     }                                                                                               \
@@ -43,11 +43,14 @@ int main()
     
 #else /*TEST_MODE*/
 
-    //FIXME - жук
-    stack_t stack = { STACK_INIT(stack) };
-    error_handle(stack_ctor(&stack, 100, 200), stack_dtor(&stack), logger_dtor());
+    //FIXME - bug
+    uint64_t stack = 0;
+    error_handle(STACK_CTOR(&stack, sizeof(size_t), 8), stack_dtor(&stack), logger_dtor());
     size_t elem = 123;
     error_handle(stack_push(&stack, &elem));
+    size_t back_elem = 0;
+    error_handle(stack_back(&stack, &back_elem), stack_dtor(&stack), logger_dtor());
+    printf("elem: %zu\n", back_elem);
     stack_dtor(&stack);
 
 #endif /*TEST_MODE*/

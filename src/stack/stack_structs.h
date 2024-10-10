@@ -7,6 +7,18 @@
 #include "../config.h"
 #include "../logger/logger.h"
 
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+
+#ifndef NDEBUG
+#define IF_DEBUG(...) __VA_ARGS__
+#define IF_ELSE_DEBUG(smth, other_smth) smth
+#else /*NDEBUG*/
+#define IF_DEBUG(...)
+#define IF_ELSE_DEBUG(smth, other_smth) other_smth
+#endif /*NDEBUG*/
+
+
 #ifdef NDEBUG
 #undef PENGUIN_PROTECT
 #undef HASH_PROTECT

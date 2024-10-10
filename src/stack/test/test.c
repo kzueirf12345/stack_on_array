@@ -30,7 +30,7 @@ enum StackError stack_test(const size_t actions_count, const size_t elem_size)
     if (!push_history)
     {
         perror("Can't calloc push_history");
-        return STACK_ERROR_STANDART_ERRNO;
+        return STACK_ERROR_STANDARD_ERRNO;
     }
 
     size_t count_pushes = 0;
@@ -85,7 +85,7 @@ static enum StackError randn_(void* const data, const size_t size)
         if (!memcpy((char*)data + byte_ind, &byte, 1))
         {
             perror("Can't memcpy byte in data");
-            return STACK_ERROR_STANDART_ERRNO;
+            return STACK_ERROR_STANDARD_ERRNO;
         }
     }
     return STACK_ERROR_SUCCESS;
@@ -103,7 +103,7 @@ static enum StackError handle_pop_(const uint64_t* const stack, const size_t ele
     if (!pop_elem)
     {
         perror("Can't calloc pop_elem");
-        return STACK_ERROR_STANDART_ERRNO;
+        return STACK_ERROR_STANDARD_ERRNO;
     }
 
     error_handler = stack_pop(stack, pop_elem);
@@ -117,7 +117,7 @@ static enum StackError handle_pop_(const uint64_t* const stack, const size_t ele
     if (!pop_elem_str)
     {
         perror("Can't calloc pop_elem_str");
-        return STACK_ERROR_STANDART_ERRNO;
+        return STACK_ERROR_STANDARD_ERRNO;
     }
 
     error_handler = data_to_lX_str(pop_elem, elem_size, &pop_elem_str, elem_size * 4);
@@ -162,7 +162,7 @@ static enum StackError handle_push_(const uint64_t* const stack, const size_t el
     if (!push_elem_str)
     {
         perror("Can't calloc push_elem_str");
-        return STACK_ERROR_STANDART_ERRNO;
+        return STACK_ERROR_STANDARD_ERRNO;
     }
 
     error_handler = data_to_lX_str(push_elem, elem_size, &push_elem_str, 4 * elem_size);
@@ -177,7 +177,7 @@ static enum StackError handle_push_(const uint64_t* const stack, const size_t el
     if (!strcat(strcat(strcat(*push_history, "0x"), push_elem_str), " "))
     {
         perror("Can't memcpu push_elem to push_history");
-        return STACK_ERROR_STANDART_ERRNO;
+        return STACK_ERROR_STANDARD_ERRNO;
     }
 
     free(push_elem_str); push_elem_str = NULL;
