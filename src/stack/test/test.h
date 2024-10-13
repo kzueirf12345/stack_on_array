@@ -1,8 +1,6 @@
 #ifndef SRC_STACK_TEST_H
 #define SRC_STACK_TEST_H
 
-#define HASH_PROTECT
-#define PENGUIN_PROTECT
 #include "../stack_funcs.h"
 
 #ifdef TEST_MODE

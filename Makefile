@@ -26,16 +26,16 @@ SANITIZER = -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,fl
 		integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,$\
 		shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr
 
-DEBUG_FLAGS = -D _DEBUG  -ggdb -Og -g3 -D_FORTIFY_SOURCES=3 $(SANITIZER)
+DEBUG_FLAGS = -D _DEBUG  -ggdb -Og -g3 -D_FORTIFY_SOURCES=3 $(SANITIZER) -D HASH_PROTECT -D PENGUIN_PROTECT
 RELEASE_FLAGS = -DNDEBUG -O2 $(SANITIZER)
 FLAGS += $(if $(DEBUG_),$(DEBUG_FLAGS),$(RELEASE_FLAGS))
+FLAGS += $(ADD_FLAGS)
 
-
-DIRS = logger stack stack/verification stack/test
+DIRS = stack stack/verification stack/test
 BUILD_DIRS = $(DIRS:%=$(BUILD_DIR)/%)
 
 
-SOURCES = main.c logger/logger.c stack/stack_funcs.c stack/verification/verification.c \
+SOURCES = main.c stack/stack_funcs.c stack/verification/verification.c \
 		  stack/test/test.c
 
 SOURCES_REL_PATH = $(SOURCES:%=$(SRC_DIR)/%)
@@ -52,10 +52,10 @@ start:
 
 
 $(PROJECT_NAME).out: $(OBJECTS_REL_PATH)
-	@$(COMPILER) $(FLAGS) -o $@ $^
+	@$(COMPILER) $(FLAGS) -o $@ $^ -L./libs/logger -llogger
 
-$(BUILD_DIR)/%.o : $(SRC_DIR)/%.c | $(BUILD_DIRS)
-	@$(COMPILER) $(FLAGS) -c -MMD -MP $< -o $@ 
+$(BUILD_DIR)/%.o : $(SRC_DIR)/%.c logger_build | $(BUILD_DIRS)
+	@$(COMPILER) $(FLAGS) -I./libs -c -MMD -MP $< -o $@
 
 -include $(DEPS_REL_PATH)
 
@@ -63,8 +63,17 @@ $(BUILD_DIRS):
 	mkdir $@
 
 
+logger_rebuild: logger_build logger_clean
 
-clean_all: clean_log clean_obj clean_deps clean_out
+logger_build:
+	make FLAGS='$(FLAGS)' build -C ./libs/logger
+
+logger_clean:
+	make clean -C ./libs/logger
+
+
+
+clean_all: clean_obj clean_deps clean_out logger_clean
 
 clean: clean_obj clean_deps clean_out
 
