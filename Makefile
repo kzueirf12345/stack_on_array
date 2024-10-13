@@ -31,24 +31,21 @@ RELEASE_FLAGS = -DNDEBUG -O2 $(SANITIZER)
 FLAGS += $(if $(DEBUG_),$(DEBUG_FLAGS),$(RELEASE_FLAGS))
 FLAGS += $(ADD_FLAGS)
 
-DIRS = stack stack/verification stack/test
+DIRS = verification test
 BUILD_DIRS = $(DIRS:%=$(BUILD_DIR)/%)
 
 
-SOURCES = main.c stack/stack_funcs.c stack/verification/verification.c \
-		  stack/test/test.c
+SOURCES = stack_funcs.c verification/verification.c test/test.c
 
 SOURCES_REL_PATH = $(SOURCES:%=$(SRC_DIR)/%)
 OBJECTS_REL_PATH = $(SOURCES:%.c=$(BUILD_DIR)/%.o)
 DEPS_REL_PATH = $(OBJECTS_REL_PATH:%.o=%.d)
 
 
-all: build start
+all: build
 
-build: $(PROJECT_NAME).out
-
-start: 
-	./$(PROJECT_NAME).out
+build: $(OBJECTS_REL_PATH)
+	ar -rcs lib$(PROJECT_NAME).a $(OBJECTS_REL_PATH)
 
 
 $(PROJECT_NAME).out: $(OBJECTS_REL_PATH)
