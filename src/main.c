@@ -43,8 +43,7 @@ int main()
     
 #else /*TEST_MODE*/
 
-    //FIXME - bug
-    uint64_t stack = 0;
+    stack_key_t stack = 0;
     error_handle(STACK_CTOR(&stack, sizeof(size_t), 8), stack_dtor(&stack), logger_dtor());
     size_t elem = 123;
     error_handle(stack_push(&stack, &elem));

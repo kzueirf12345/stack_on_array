@@ -198,13 +198,13 @@ static uint64_t stack_hash_(const void* const elem, const size_t elem_size,
          offset + sizeof(uint64_t) <= elem_size; 
          offset += sizeof(uint64_t))
     {
-        hash_val = hash_val * 31 + *(const uint64_t*)((const char*)elem + offset);                                                                                                                          /*vova loh*/
+        hash_val = hash_val * 33 + *(const uint64_t*)((const char*)elem + offset);                                                                                                                          /*vova loh*/
     }
 
     const size_t remainder = elem_size % sizeof(uint64_t);
     for (size_t offset = elem_size - remainder; offset < elem_size; ++offset)
     {
-        hash_val = hash_val * 31 + *(const uint8_t*)((const char*)elem + offset);
+        hash_val = hash_val * 33 + *(const uint8_t*)((const char*)elem + offset);
     }
 
     return hash_val;

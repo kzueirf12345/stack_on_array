@@ -1,8 +1,8 @@
 #include "stack_funcs.h"
 
 
-IF_HASH(static uint64_t stack_hash_(const void* const elem, const size_t elem_size, 
-                                    const size_t first_skip_size);)
+IF_HASH(static uint64_t stack_hash_(const void* const elem, const size_t elem_size);)
+IF_HASH(static void     stack_rehash_(stack_t* const stack);)
 
 
 //I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT
@@ -11,8 +11,8 @@ IF_HASH(static uint64_t stack_hash_(const void* const elem, const size_t elem_si
 #define RAND_MAX_WIDTH_ IMAX_BITS_(RAND_MAX)
 static_assert((RAND_MAX & (RAND_MAX + 1u)) == 0, "RAND_MAX not a Mersenne number");
 
-static uint64_t rand64_(void) {
-  uint64_t r = 0;
+static stack_key_t rand64_(void) {
+  stack_key_t r = 0;
   for (int i = 0; i < 64; i += RAND_MAX_WIDTH_) {
     r <<= RAND_MAX_WIDTH_;
     r ^= (unsigned) rand();
@@ -21,9 +21,9 @@ static uint64_t rand64_(void) {
 }
 //I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT
 
-static uint64_t STACK_KEY = 0;
+static stack_key_t STACK_KEY = 0;
 
-enum StackError stack_ctor_NOT_USE_(uint64_t* const stack_num, const size_t elem_size, 
+enum StackError stack_ctor_NOT_USE_(stack_key_t* const stack_num, const size_t elem_size, 
                                     const size_t start_capacity, const char* const name,
                                     const place_in_code_t place_in_code)
 {
@@ -40,7 +40,7 @@ enum StackError stack_ctor_NOT_USE_(uint64_t* const stack_num, const size_t elem
         return STACK_ERROR_STANDARD_ERRNO;
     }
     STACK_KEY = rand64_();
-    *stack_num = STACK_KEY ^ (uint64_t)stack;
+    *stack_num = STACK_KEY ^ (stack_key_t)stack;
 
 #ifndef NDEBUG
     stack->name = name;
@@ -66,6 +66,12 @@ enum StackError stack_ctor_NOT_USE_(uint64_t* const stack_num, const size_t elem
     stack->data = calloc(stack->elem_size * stack->capacity IF_PENGUIN(+ 2 * PENGUIN_T_SIZE),
                          sizeof(char));
 
+    if (!stack->data)
+    {
+        perror("Can't calloc stack->data");
+        return STACK_ERROR_STANDARD_ERRNO;
+    }
+
 #ifdef PENGUIN_PROTECT
     const penguin_t PENGUIN_bump = PENGUIN_CONTROL;
     if (!memcpy((char*)stack->data, &PENGUIN_bump, PENGUIN_T_SIZE))
@@ -82,17 +88,13 @@ enum StackError stack_ctor_NOT_USE_(uint64_t* const stack_num, const size_t elem
     }
 #endif /*PENGUIN_PROTECT*/
 
-#ifdef HASH_PROTECT
-    stack->data_hash  = stack_hash_(stack->data, stack->capacity * stack->elem_size, 0);
-    stack->stack_hash = stack_hash_(stack, STACK_T_SIZE, 
-                                    IF_PENGUIN(PENGUIN_T_SIZE) + 2 * sizeof(uint64_t));
-#endif /*HASH_PROTECT*/
+    IF_HASH(stack_rehash_(stack);)
     
     STACK_VERIFY(stack, NULL);
     return STACK_ERROR_SUCCESS;
 }
 
-void stack_dtor(uint64_t* const stack_num)
+void stack_dtor(stack_key_t* const stack_num)
 {
     lassert(stack_num, "");
     stack_t* stack = (stack_t*)(*stack_num ^ STACK_KEY);
@@ -115,7 +117,7 @@ void stack_dtor(uint64_t* const stack_num)
 
 static enum StackError stack_resize_(stack_t* stack);
 
-enum StackError stack_push(const uint64_t* const stack_num, const void* const elem)
+enum StackError stack_push(const stack_key_t* const stack_num, const void* const elem)
 {
     lassert(stack_num, "");
     stack_t* const stack = (stack_t* const)(*stack_num ^ STACK_KEY);
@@ -137,17 +139,13 @@ enum StackError stack_push(const uint64_t* const stack_num, const void* const el
     }
     ++stack->size;
 
-#ifdef HASH_PROTECT
-    stack->data_hash  = stack_hash_(stack->data, stack->capacity * stack->elem_size, 0);
-    stack->stack_hash = stack_hash_(stack, STACK_T_SIZE, 
-                                    IF_PENGUIN(PENGUIN_T_SIZE) + 2 * sizeof(uint64_t));
-#endif /*HASH_PROTECT*/
+    IF_HASH(stack_rehash_(stack);)
 
     STACK_VERIFY(stack, NULL);
     return STACK_ERROR_SUCCESS;
 }
 
-enum StackError stack_pop (const uint64_t* const stack_num, void* const elem)
+enum StackError stack_pop (const stack_key_t* const stack_num, void* const elem)
 {
     lassert(stack_num, "");
     stack_t* const stack = (stack_t* const)(*stack_num ^ STACK_KEY);
@@ -170,11 +168,7 @@ enum StackError stack_pop (const uint64_t* const stack_num, void* const elem)
     }
     --stack->size;
 
-#ifdef HASH_PROTECT
-    stack->data_hash  = stack_hash_(stack->data, stack->capacity * stack->elem_size, 0);
-    stack->stack_hash = stack_hash_(stack, STACK_T_SIZE, 
-                                    IF_PENGUIN(PENGUIN_T_SIZE) + 2 * sizeof(uint64_t));
-#endif /*HASH_PROTECT*/
+    IF_HASH(stack_rehash_(stack);)
 
     const enum StackError stack_resize_error = stack_resize_(stack);
     if (stack_resize_error != STACK_ERROR_SUCCESS)
@@ -183,17 +177,13 @@ enum StackError stack_pop (const uint64_t* const stack_num, void* const elem)
         return stack_resize_error;
     }
 
-#ifdef HASH_PROTECT
-    stack->data_hash  = stack_hash_(stack->data, stack->capacity * stack->elem_size, 0);
-    stack->stack_hash = stack_hash_(stack, STACK_T_SIZE, 
-                                    IF_PENGUIN(PENGUIN_T_SIZE) + 2 * sizeof(uint64_t));
-#endif /*HASH_PROTECT*/
+    IF_HASH(stack_rehash_(stack);)
 
     STACK_VERIFY(stack, NULL);
     return STACK_ERROR_SUCCESS;
 }
 
-enum StackError stack_back(const uint64_t* const stack_num, void* const elem)
+enum StackError stack_back(const stack_key_t* const stack_num, void* const elem)
 {
     lassert(stack_num, "");
     stack_t* const stack = (stack_t* const)(*stack_num ^ STACK_KEY);
@@ -212,13 +202,22 @@ enum StackError stack_back(const uint64_t* const stack_num, void* const elem)
     return STACK_ERROR_SUCCESS;
 }
 
-bool stack_is_empty(const uint64_t* const stack_num)
+bool stack_is_empty(const stack_key_t* const stack_num)
 {
     lassert(stack_num, "");
     stack_t* const stack = (stack_t* const)(*stack_num ^ STACK_KEY);
     STACK_VERIFY(stack, NULL);
 
     return stack->size == 0;
+}
+
+size_t stack_size(const stack_key_t* const stack_num)
+{
+    lassert(stack_num, "");
+    stack_t* const stack = (stack_t* const)(*stack_num ^ STACK_KEY);
+    STACK_VERIFY(stack, NULL);
+
+    return stack->size;
 }
 
 //=====================================================
@@ -256,11 +255,7 @@ static enum StackError stack_resize_(stack_t* stack)
 
         stack->capacity = new_capacity;
 
-#ifdef HASH_PROTECT
-    stack->data_hash  = stack_hash_(stack->data, stack->capacity * stack->elem_size, 0);
-    stack->stack_hash = stack_hash_(stack, STACK_T_SIZE, 
-                                    IF_PENGUIN(PENGUIN_T_SIZE) + 2 * sizeof(uint64_t));
-#endif /*HASH_PROTECT*/
+        IF_HASH(stack_rehash_(stack);)
     }
 
     STACK_VERIFY(stack, NULL);
@@ -336,26 +331,34 @@ static void* recalloc_(void* ptrmem, const size_t old_number, const size_t old_s
 //====================================================
 
 #ifdef HASH_PROTECT
-static uint64_t stack_hash_(const void* const elem, const size_t elem_size, 
-                            const size_t first_skip_size)
+static uint64_t stack_hash_(const void* const elem, const size_t elem_size)
 {
     lassert(elem, "");
-    lassert(first_skip_size <= elem_size, "");
 
     uint64_t hash_val = 0;
-    for (size_t offset = first_skip_size;
-         offset + sizeof(uint64_t) <= elem_size; 
-         offset += sizeof(uint64_t))
+    for (size_t offset = 0; offset + sizeof(uint64_t) <= elem_size; offset += sizeof(uint64_t))
     {
-        hash_val = hash_val * 31 + *(const uint64_t*)((const char*)elem + offset);                                                                                                                          /*vova loh*/
+        hash_val = hash_val * 33 + *(const uint64_t*)((const char*)elem + offset);                                                                                                                          /*vova loh*/
     }
 
     const size_t remainder = elem_size % sizeof(uint64_t);
     for (size_t offset = elem_size - remainder; offset < elem_size; ++offset)
     {
-        hash_val = hash_val * 31 + *(const uint8_t*)((const char*)elem + offset);
+        hash_val = hash_val * 33 + *(const uint8_t*)((const char*)elem + offset);
     }
 
     return hash_val;
+}
+
+static void stack_rehash_(stack_t* const stack)
+{
+    lassert(stack, "");
+    lassert(stack->data, "");
+
+    stack->data_hash  = stack_hash_(stack->data, stack->capacity * stack->elem_size);
+    stack->stack_hash = stack_hash_((char*)stack 
+                                        + (IF_PENGUIN(PENGUIN_T_SIZE) + 2 * sizeof(uint64_t)), 
+                                    STACK_T_SIZE 
+                                        - (IF_PENGUIN(PENGUIN_T_SIZE) + 2 * sizeof(uint64_t)));
 }
 #endif /*HASH_PROTECT*/

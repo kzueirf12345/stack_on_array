@@ -4,9 +4,9 @@
 
 static enum StackError randn_(void* const data, const size_t size);
 
-static enum StackError handle_pop_(const uint64_t* const stack, const size_t elem_size, 
+static enum StackError handle_pop_(const stack_key_t* const stack, const size_t elem_size, 
                                    const size_t action_ind);
-static enum StackError handle_push_(const uint64_t* const stack, const size_t elem_size,
+static enum StackError handle_push_(const stack_key_t* const stack, const size_t elem_size,
                                     const size_t action_ind, char** push_history);
 
 enum StackError stack_test(const size_t actions_count, const size_t elem_size)
@@ -18,7 +18,7 @@ enum StackError stack_test(const size_t actions_count, const size_t elem_size)
 
     enum StackError error_handler = STACK_ERROR_SUCCESS;
 
-    uint64_t stack = 0;
+    stack_key_t stack = 0;
     error_handler = STACK_CTOR(&stack, elem_size, 0);
     if (error_handler)
     {
@@ -41,8 +41,6 @@ enum StackError stack_test(const size_t actions_count, const size_t elem_size)
         if (do_pop)
         {
             --possible_pop_count;
-            // stack.size = stack.capacity + 1; //FIXME
-            // *(uint64_t*)(stack.data) = 5;
             
             error_handler = handle_pop_(&stack, elem_size, action_ind);
             if (error_handler)
@@ -91,7 +89,7 @@ static enum StackError randn_(void* const data, const size_t size)
     return STACK_ERROR_SUCCESS;
 }
 
-static enum StackError handle_pop_(const uint64_t* const stack, const size_t elem_size, 
+static enum StackError handle_pop_(const stack_key_t* const stack, const size_t elem_size, 
                                    const size_t action_ind)
 {
     lassert(stack, "");
@@ -134,7 +132,7 @@ static enum StackError handle_pop_(const uint64_t* const stack, const size_t ele
     return error_handler;
 }
 
-static enum StackError handle_push_(const uint64_t* const stack, const size_t elem_size,
+static enum StackError handle_push_(const stack_key_t* const stack, const size_t elem_size,
                                     const size_t action_ind, char** push_history)
 {
     lassert(stack, "");
