@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "logger/logger.h"
+#include "logger/liblogger.h"
 
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
