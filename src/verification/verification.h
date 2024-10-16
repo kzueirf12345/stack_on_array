@@ -46,6 +46,19 @@ static_assert(STACK_ERROR_SUCCESS == 0);
 
 const char* stack_strerror(const enum StackError error);
 
+#define stack_error_handle(call_func, ...)                                                          \
+    do {                                                                                            \
+        stack_error_handler = call_func;                                                            \
+        if (stack_error_handler)                                                                    \
+        {                                                                                           \
+            fprintf(stderr, "Can't " #call_func". Stack error: %s\n",                               \
+                            stack_strerror(input_error_handler));                                   \
+            __VA_ARGS__                                                                             \
+            return stack_error_handler;                                                             \
+        }                                                                                           \
+    } while(0)
+    
+
 enum StackError data_to_lX_str(const void* const data, const size_t size, char* const * lX_str,
                                const size_t lX_str_size);
 

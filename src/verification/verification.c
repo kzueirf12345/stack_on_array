@@ -40,12 +40,11 @@ const char* stack_strerror(const enum StackError error)
 #endif /*HASH_PROTECT*/
         CASE_ENUM_TO_STRING_(STACK_ERROR_UNKNOWN);
 
-        default: 
-            fprintf(stderr, "Unknown StackError enum, it's soooo bad\n");
-            return NULL;
+        default:
+            return "UNKNOWN_STACK_ERROR";
     }
 
-    return NULL;
+    return "UNKNOWN_STACK_ERROR";
 }
 #undef CASE_ENUM_TO_STRING_
 
