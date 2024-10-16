@@ -35,6 +35,17 @@ enum StackError stack_back(const stack_key_t* const stack_num, void* const elem)
 bool stack_is_empty(const stack_key_t* const stack_num);
 size_t stack_size(const stack_key_t* const stack_num);
 
+
+void stack_dumb_NOT_USE_(const stack_key_t stack_num, place_in_code_t place_in_code,
+                         enum StackError (*elem_to_str)(const void* const elem, 
+                                                        const size_t elem_size,
+                                                        char* const * str, 
+                                                        const size_t mx_str_size));
+#define STACK_DUMB(stack_num, elem_to_str)                                                          \
+        stack_dumb_NOT_USE_(stack_num, (place_in_code_t)                                            \
+                                       { .file = __FILE__, .func = __func__, .line = __LINE__ },    \
+                            elem_to_str);
+
 //==================================================================================================
 
 #endif /*SRC_STACK_H*/

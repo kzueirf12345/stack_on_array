@@ -330,6 +330,19 @@ static void* recalloc_(void* ptrmem, const size_t old_number, const size_t old_s
 
 //====================================================
 
+void stack_dumb_NOT_USE_(const stack_key_t stack_num, place_in_code_t place_in_code,
+                         enum StackError (*elem_to_str)(const void* const elem, 
+                                                        const size_t elem_size,
+                                                        char* const * str, 
+                                                        const size_t mx_str_size))
+{
+    stack_t* const stack = (stack_t* const)(stack_num ^ STACK_KEY);
+
+    stack_dumb_func_NOT_USE_(stack, place_in_code, elem_to_str);
+}
+
+//====================================================
+
 #ifdef HASH_PROTECT
 static uint64_t stack_hash_(const void* const elem, const size_t elem_size)
 {

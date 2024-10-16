@@ -218,7 +218,7 @@ static const char* handle_invalid_ptr_(const void* const check_ptr);
         logg(LOG_LEVEL_DETAILS_DUMB, format, ##__VA_ARGS__);                                        \
         fprintf(stderr, format "\n", ##__VA_ARGS__);                                                \
         } while(0)
-void stack_dumb_func(const stack_t* const stack, place_in_code_t place_in_code,
+void stack_dumb_func_NOT_USE_(const stack_t* const stack, place_in_code_t place_in_code,
                      enum StackError (*elem_to_str)(const void* const elem, const size_t elem_size,
                                                     char* const * str, const size_t mx_str_size))
 {

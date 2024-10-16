@@ -67,9 +67,11 @@ enum StackError data_to_lX_str(const void* const data, const size_t size, char* 
 
 enum StackError stack_verify_func(const stack_t* const stack);
 
-void stack_dumb_func(const stack_t* const stack, place_in_code_t place_in_code,
-                     enum StackError (*elem_to_str)(const void* const elem, const size_t elem_size,
-                                                    char* const * str, const size_t mx_str_size));
+void stack_dumb_func_NOT_USE_(const stack_t* const stack, place_in_code_t place_in_code,
+                              enum StackError (*elem_to_str)(const void* const elem, 
+                                                             const size_t elem_size,
+                                                             char* const * str, 
+                                                             const size_t mx_str_size));
 
 
 #define STACK_VERIFY(stack, elem_to_str)                                                            \
@@ -78,9 +80,9 @@ void stack_dumb_func(const stack_t* const stack, place_in_code_t place_in_code,
         const enum StackError verify_error = stack_verify_func(stack);                              \
         if (verify_error)                                                                           \
         {                                                                                           \
-            stack_dumb_func(stack, (place_in_code_t)                                                \
-                                   { .file = __FILE__, .func = __func__, .line = __LINE__ },        \
-                            elem_to_str);                                                           \
+            stack_dumb_func_NOT_USE_(stack, (place_in_code_t)                                       \
+                                     { .file = __FILE__, .func = __func__, .line = __LINE__ },      \
+                                     elem_to_str);                                                  \
             lassert(false, "stack error: %s", stack_strerror(verify_error));                        \
         }                                                                                           \
     } while (0)
