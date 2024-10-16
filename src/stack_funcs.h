@@ -30,10 +30,10 @@ void stack_dtor(stack_key_t* const stack_num);
 
 enum StackError stack_push(const stack_key_t* const stack_num, const void* const elem);
 enum StackError stack_pop (const stack_key_t* const stack_num, void* const elem);
-enum StackError stack_back(const stack_key_t* const stack_num, void* const elem);
+enum StackError stack_back(const stack_key_t stack_num, void* const elem);
 
-bool stack_is_empty(const stack_key_t* const stack_num);
-size_t stack_size(const stack_key_t* const stack_num);
+bool stack_is_empty(const stack_key_t stack_num);
+size_t stack_size  (const stack_key_t stack_num);
 
 
 void stack_dumb_NOT_USE_(const stack_key_t stack_num, place_in_code_t place_in_code,

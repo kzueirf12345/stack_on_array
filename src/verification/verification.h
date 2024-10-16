@@ -52,7 +52,7 @@ const char* stack_strerror(const enum StackError error);
         if (stack_error_handler)                                                                    \
         {                                                                                           \
             fprintf(stderr, "Can't " #call_func". Stack error: %s\n",                               \
-                            stack_strerror(input_error_handler));                                   \
+                            stack_strerror(stack_error_handler));                                   \
             __VA_ARGS__                                                                             \
             return stack_error_handler;                                                             \
         }                                                                                           \

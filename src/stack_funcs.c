@@ -183,10 +183,10 @@ enum StackError stack_pop (const stack_key_t* const stack_num, void* const elem)
     return STACK_ERROR_SUCCESS;
 }
 
-enum StackError stack_back(const stack_key_t* const stack_num, void* const elem)
+enum StackError stack_back(const stack_key_t stack_num, void* const elem)
 {
     lassert(stack_num, "");
-    stack_t* const stack = (stack_t* const)(*stack_num ^ STACK_KEY);
+    stack_t* const stack = (stack_t* const)(stack_num ^ STACK_KEY);
     STACK_VERIFY(stack, NULL);
 
     lassert(stack->size > 0, "");
@@ -202,19 +202,19 @@ enum StackError stack_back(const stack_key_t* const stack_num, void* const elem)
     return STACK_ERROR_SUCCESS;
 }
 
-bool stack_is_empty(const stack_key_t* const stack_num)
+bool stack_is_empty(const stack_key_t stack_num)
 {
     lassert(stack_num, "");
-    stack_t* const stack = (stack_t* const)(*stack_num ^ STACK_KEY);
+    stack_t* const stack = (stack_t* const)(stack_num ^ STACK_KEY);
     STACK_VERIFY(stack, NULL);
 
     return stack->size == 0;
 }
 
-size_t stack_size(const stack_key_t* const stack_num)
+size_t stack_size(const stack_key_t stack_num)
 {
     lassert(stack_num, "");
-    stack_t* const stack = (stack_t* const)(*stack_num ^ STACK_KEY);
+    stack_t* const stack = (stack_t* const)(stack_num ^ STACK_KEY);
     STACK_VERIFY(stack, NULL);
 
     return stack->size;
@@ -238,7 +238,7 @@ static enum StackError stack_resize_(stack_t* stack)
     else
     {
         size_t size_to_down_resize = stack->capacity / 4;
-        size_to_down_resize = MAX(1, size_to_down_resize);
+        size_to_down_resize = MAX(1, size_to_down_resize) + 1;
         if (stack->size <= size_to_down_resize)
             new_capacity = size_to_down_resize;
     }
