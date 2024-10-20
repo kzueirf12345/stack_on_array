@@ -46,7 +46,7 @@ static_assert(STACK_ERROR_SUCCESS == 0);
 
 const char* stack_strerror(const enum StackError error);
 
-#define stack_error_handle(call_func, ...)                                                          \
+#define STACK_ERROR_HANDLE(call_func, ...)                                                          \
     do {                                                                                            \
         stack_error_handler = call_func;                                                            \
         if (stack_error_handler)                                                                    \

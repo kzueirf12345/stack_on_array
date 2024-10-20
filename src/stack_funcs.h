@@ -16,7 +16,7 @@ enum StackError stack_ctor_NOT_USE_(stack_key_t* const stack_num, const size_t e
 #define STACK_CTOR(stack_num, elem_size, start_capacity)                                            \
         stack_ctor_NOT_USE_(stack_num, elem_size, start_capacity, #stack_num,                       \
                             (place_in_code_t)                                                       \
-                            { .file = __FILE__, .func = __func__, .line = __LINE__ });
+                            { .file = __FILE__, .func = __func__, .line = __LINE__ })
 
 #else  /*NDEBUG*/
 
