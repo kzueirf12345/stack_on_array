@@ -76,7 +76,7 @@ typedef struct stack_t
 
 #define STACK_T_SIZE sizeof(stack_t)
 
-typedef uint64_t stack_key_t;
+typedef uintptr_t stack_key_t;
 
 
 #endif /*SRC_STACK_STRUCTS_H*/
