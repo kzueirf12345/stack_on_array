@@ -65,7 +65,7 @@ enum StackError stack_ctor_NOT_USE_(stack_key_t* const stack_num, const size_t e
     stack->data = calloc(stack->elem_size * stack->capacity IF_PENGUIN(+ 2 * PENGUIN_T_SIZE),
                          sizeof(char));
 
-    if (!stack->data)
+    if (!stack->data && (stack->capacity IF_PENGUIN(+ 2 * PENGUIN_T_SIZE)) != 0)
     {
         perror("Can't calloc stack->data");
         return STACK_ERROR_STANDARD_ERRNO;

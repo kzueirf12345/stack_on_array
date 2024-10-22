@@ -48,7 +48,7 @@ const char* stack_strerror(const enum StackError error);
 
 #define STACK_ERROR_HANDLE(call_func, ...)                                                          \
     do {                                                                                            \
-        stack_error_handler = call_func;                                                            \
+        const enum StackError stack_error_handler = call_func;                                      \
         if (stack_error_handler)                                                                    \
         {                                                                                           \
             fprintf(stderr, "Can't " #call_func". Stack error: %s\n",                               \

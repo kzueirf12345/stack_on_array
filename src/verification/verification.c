@@ -1,5 +1,8 @@
-#include "verification.h"
+#include <unistd.h>
+#include <stdlib.h>
+#include <errno.h>
 
+#include "verification.h"
 
 static enum PtrState is_valid_ptr_(const void* ptr);
 
@@ -127,9 +130,9 @@ enum StackError stack_verify_func(const stack_t* const stack)
     case PTR_STATES_VALID:
         break;
     case PTR_STATES_NULL:
-        return STACK_ERROR_STACK_IS_NULL;
+        return STACK_ERROR_DATA_IS_NULL;
     case PTR_STATES_INVALID:
-        return STACK_ERROR_STACK_IS_INVALID;
+        return STACK_ERROR_DATA_IS_INVALID;
     case PTR_STATES_ERROR:
         return STACK_ERROR_STANDARD_ERRNO;
     
@@ -332,23 +335,41 @@ static const char* handle_invalid_ptr_(const void* const check_ptr)
 
 static enum PtrState is_valid_ptr_(const void* ptr)
 {
-    if (errno)
+    lassert(!errno, "");
+
+    if (ptr == NULL)
+    {
+        return PTR_STATES_NULL;
+    }
+
+    char filename[] = "/tmp/chupapi_munyanya.XXXXXX";
+    const int fd = mkstemp(filename);
+
+    if (fd == -1) 
+    {
+        perror("Can't mkstemp file");
         return PTR_STATES_ERROR;
+    }
 
-    if (!ptr) return PTR_STATES_NULL;
+    const ssize_t write_result = write(fd, ptr, 1);
 
-    int fd = open(ptr, 0, 0);
+    if (close(fd))
+    {
+        perror("Can't close temp file");
+        return PTR_STATES_ERROR;
+    }
 
-    if (fd == -1 && errno == EFAULT)
+    if (write_result == 1) 
+    {
+        return PTR_STATES_VALID;
+    } 
+    else if (errno == EFAULT) 
     {
         errno = 0;
         return PTR_STATES_INVALID;
     }
-    else if (fd != -1 && close(fd) == -1)
-        return PTR_STATES_ERROR;
-    else 
-        errno = 0;
-
-    return PTR_STATES_VALID;
+    
+    perror("Unpredictable errno state, after write into temp file");
+    return PTR_STATES_ERROR;
 }
 
