@@ -1,4 +1,5 @@
-.PHONY: all clean
+.PHONY: all build clean logger_build logger_clean logger_rebuild \
+		clean_all clean_log clean_out clean_obj clean_deps clean_txt clean_bin
 
 PROJECT_NAME = stack
 
@@ -6,7 +7,9 @@ BUILD_DIR = ./build
 SRC_DIR = ./src
 COMPILER = gcc
 
-DEBUG_ = 1
+DEBUG_ ?= 1
+
+ifeq ($(origin FLAGS), undefined)
 
 FLAGS =	-Wall -Wextra -Waggressive-loop-optimizations \
 		-Wmissing-declarations -Wcast-align -Wcast-qual -Wchar-subscripts \
@@ -26,10 +29,19 @@ SANITIZER = -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,fl
 		integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,$\
 		shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr
 
-DEBUG_FLAGS = -D _DEBUG  -ggdb -Og -g3 -D_FORTIFY_SOURCES=3 $(SANITIZER) -D HASH_PROTECT -D PENGUIN_PROTECT
+DEBUG_FLAGS = -D _DEBUG  -ggdb -Og -g3 -D_FORTIFY_SOURCES=3 $(SANITIZER)
 RELEASE_FLAGS = -DNDEBUG -O2
-FLAGS += $(if $(DEBUG_),$(DEBUG_FLAGS),$(RELEASE_FLAGS))
+
+ifneq ($(DEBUG_),0)
+FLAGS += $(DEBUG_FLAGS)
+else
+FLAGS += $(RELEASE_FLAGS)
+endif
+
+endif
+
 FLAGS += $(ADD_FLAGS)
+
 
 DIRS = verification test
 BUILD_DIRS = $(DIRS:%=$(BUILD_DIR)/%)
@@ -50,22 +62,25 @@ build: lib$(PROJECT_NAME).a
 lib$(PROJECT_NAME).a : $(OBJECTS_REL_PATH)
 	ar -rcs lib$(PROJECT_NAME).a $(OBJECTS_REL_PATH)
 
-$(BUILD_DIR)/%.o : $(SRC_DIR)/%.c | $(BUILD_DIRS) logger_build
+$(BUILD_DIR)/%.o : $(SRC_DIR)/%.c |./$(BUILD_DIR)/ $(BUILD_DIRS) logger_build
 	@$(COMPILER) $(FLAGS) -I./libs -c -MMD -MP $< -o $@
 
 -include $(DEPS_REL_PATH)
 
 $(BUILD_DIRS):
 	mkdir $@
+./$(BUILD_DIR)/:
+	mkdir $@
+
 
 
 logger_rebuild: logger_build logger_clean
 
 logger_build:
-	make ADD_FLAGS="$(ADD_FLAGS)" build -C ./libs/logger
+	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./libs/logger
 
 logger_clean:
-	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./libs/logger
+	make clean -C ./libs/logger
 
 
 

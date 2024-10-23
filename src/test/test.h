@@ -3,10 +3,10 @@
 
 #include "../stack_funcs.h"
 
-#ifdef TEST_MODE
+#ifdef STACK_TEST_MODE
 
 enum StackError stack_test(const size_t actions_count, const size_t elem_size);
 
-#endif /*TEST_MODE*/
+#endif /*STACK_TEST_MODE*/
 
 #endif /*SRC_STACK_TEST_H*/

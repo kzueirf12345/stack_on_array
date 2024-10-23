@@ -1,6 +1,6 @@
 #include "test.h"
 
-#ifdef TEST_MODE
+#ifdef STACK_TEST_MODE
 
 static enum StackError randn_(void* const data, const size_t size);
 
@@ -184,4 +184,4 @@ static enum StackError handle_push_(const stack_key_t* const stack, const size_t
     return error_handler;
 }
 
-#endif /*TEST_MODE*/
+#endif /*STACK_TEST_MODE*/
