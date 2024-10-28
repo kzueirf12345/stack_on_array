@@ -5,23 +5,23 @@ IF_HASH(static uint64_t stack_hash_(const void* const elem, const size_t elem_si
 IF_HASH(static void     stack_rehash_(stack_t* const stack);)
 
 
-//I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT
-// https://stackoverflow.com/questions/33010010/how-to-generate-random-64-bit-unsigned-integer-in-c
-#define IMAX_BITS_(m) ((m)/((m)%255+1) / 255%255*8 + 7-86/((m)%255+12))
-#define RAND_MAX_WIDTH_ IMAX_BITS_(RAND_MAX)
-static_assert((RAND_MAX & (RAND_MAX + 1u)) == 0, "RAND_MAX not a Mersenne number");
+// //I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT
+// // https://stackoverflow.com/questions/33010010/how-to-generate-random-64-bit-unsigned-integer-in-c
+// #define IMAX_BITS_(m) ((m)/((m)%255+1) / 255%255*8 + 7-86/((m)%255+12))
+// #define RAND_MAX_WIDTH_ IMAX_BITS_(RAND_MAX)
+// static_assert((RAND_MAX & (RAND_MAX + 1u)) == 0, "RAND_MAX not a Mersenne number");
 
-static stack_key_t rand64_(void) {
-  stack_key_t r = 0;
-  for (int i = 0; i < 64; i += RAND_MAX_WIDTH_) {
-    r <<= RAND_MAX_WIDTH_;
-    r ^= (unsigned) rand();
-  }
-  return r;
-}
-//I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT
+// static stack_key_t rand64_(void) {
+//   stack_key_t r = 0;
+//   for (int i = 0; i < 64; i += RAND_MAX_WIDTH_) {
+//     r <<= RAND_MAX_WIDTH_;
+//     r ^= (unsigned) rand();
+//   }
+//   return r;
+// }
+// //I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT I STEAL IT
 
-static stack_key_t STACK_KEY = 0;
+// static stack_key_t STACK_KEY = 0;
 
 enum StackError stack_ctor_NOT_USE_(stack_key_t* const stack_num, const size_t elem_size, 
                                     const size_t start_capacity, const char* const name,
@@ -39,8 +39,7 @@ enum StackError stack_ctor_NOT_USE_(stack_key_t* const stack_num, const size_t e
         perror("Can't calloc stack");
         return STACK_ERROR_STANDARD_ERRNO;
     }
-    STACK_KEY = rand64_();
-    *stack_num = STACK_KEY ^ (stack_key_t)stack;
+    *stack_num = (stack_key_t)stack;
 
 #ifndef NDEBUG
     stack->name = name;
@@ -66,7 +65,7 @@ enum StackError stack_ctor_NOT_USE_(stack_key_t* const stack_num, const size_t e
     stack->data = calloc(stack->elem_size * stack->capacity IF_PENGUIN(+ 2 * PENGUIN_T_SIZE),
                          sizeof(char));
 
-    if (!stack->data)
+    if (!stack->data && (stack->capacity IF_PENGUIN(+ 2 * PENGUIN_T_SIZE)) != 0)
     {
         perror("Can't calloc stack->data");
         return STACK_ERROR_STANDARD_ERRNO;
@@ -97,7 +96,7 @@ enum StackError stack_ctor_NOT_USE_(stack_key_t* const stack_num, const size_t e
 void stack_dtor(stack_key_t* const stack_num)
 {
     lassert(stack_num, "");
-    stack_t* stack = (stack_t*)(*stack_num ^ STACK_KEY);
+    stack_t* stack = (stack_t*)(*stack_num);
     STACK_VERIFY(stack, NULL);
 
 #ifndef NDEBUG
@@ -120,7 +119,7 @@ static enum StackError stack_resize_(stack_t* stack);
 enum StackError stack_push(const stack_key_t* const stack_num, const void* const elem)
 {
     lassert(stack_num, "");
-    stack_t* const stack = (stack_t* const)(*stack_num ^ STACK_KEY);
+    stack_t* const stack = (stack_t* const)(*stack_num);
     STACK_VERIFY(stack, NULL);
 
     lassert(elem, "");
@@ -148,7 +147,7 @@ enum StackError stack_push(const stack_key_t* const stack_num, const void* const
 enum StackError stack_pop (const stack_key_t* const stack_num, void* const elem)
 {
     lassert(stack_num, "");
-    stack_t* const stack = (stack_t* const)(*stack_num ^ STACK_KEY);
+    stack_t* const stack = (stack_t* const)(*stack_num);
     STACK_VERIFY(stack, NULL);
 
     lassert(stack->size > 0, "");
@@ -186,7 +185,7 @@ enum StackError stack_pop (const stack_key_t* const stack_num, void* const elem)
 enum StackError stack_back(const stack_key_t stack_num, void* const elem)
 {
     lassert(stack_num, "");
-    stack_t* const stack = (stack_t* const)(stack_num ^ STACK_KEY);
+    stack_t* const stack = (stack_t* const)(stack_num);
     STACK_VERIFY(stack, NULL);
 
     lassert(stack->size > 0, "");
@@ -205,7 +204,7 @@ enum StackError stack_back(const stack_key_t stack_num, void* const elem)
 bool stack_is_empty(const stack_key_t stack_num)
 {
     lassert(stack_num, "");
-    stack_t* const stack = (stack_t* const)(stack_num ^ STACK_KEY);
+    stack_t* const stack = (stack_t* const)(stack_num);
     STACK_VERIFY(stack, NULL);
 
     return stack->size == 0;
@@ -214,7 +213,7 @@ bool stack_is_empty(const stack_key_t stack_num)
 size_t stack_size(const stack_key_t stack_num)
 {
     lassert(stack_num, "");
-    stack_t* const stack = (stack_t* const)(stack_num ^ STACK_KEY);
+    stack_t* const stack = (stack_t* const)(stack_num);
     STACK_VERIFY(stack, NULL);
 
     return stack->size;
@@ -336,7 +335,7 @@ void stack_dumb_NOT_USE_(const stack_key_t stack_num, place_in_code_t place_in_c
                                                         char* const * str, 
                                                         const size_t mx_str_size))
 {
-    stack_t* const stack = (stack_t* const)(stack_num ^ STACK_KEY);
+    stack_t* const stack = (stack_t* const)(stack_num);
 
     stack_dumb_func_NOT_USE_(stack, place_in_code, elem_to_str);
 }
