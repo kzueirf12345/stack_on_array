@@ -85,6 +85,7 @@ enum StackError stack_ctor_NOT_USE_(stack_key_t* const stack_num, const size_t e
         perror("Can't memcpy right PENGUIN");
         return STACK_ERROR_STANDARD_ERRNO;
     }
+    fprintf(stderr, "lol\n");
 #endif /*PENGUIN_PROTECT*/
 
     IF_HASH(stack_rehash_(stack);)
@@ -329,6 +330,8 @@ static void* recalloc_(void* ptrmem, const size_t old_number, const size_t old_s
 
 //====================================================
 
+#ifndef NDEBUG
+
 void stack_dumb_NOT_USE_(const stack_key_t stack_num, place_in_code_t place_in_code,
                          enum StackError (*elem_to_str)(const void* const elem, 
                                                         const size_t elem_size,
@@ -339,6 +342,8 @@ void stack_dumb_NOT_USE_(const stack_key_t stack_num, place_in_code_t place_in_c
 
     stack_dumb_func_NOT_USE_(stack, place_in_code, elem_to_str);
 }
+
+#endif /*NDEBUG*/
 
 //====================================================
 

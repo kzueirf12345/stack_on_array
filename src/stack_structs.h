@@ -18,10 +18,10 @@
 #endif /*NDEBUG*/
 
 
-#ifdef NDEBUG
-#undef PENGUIN_PROTECT
-#undef HASH_PROTECT
-#endif /*NDEBUG*/
+// #ifdef NDEBUG
+// #undef PENGUIN_PROTECT
+// #undef HASH_PROTECT
+// #endif /*NDEBUG*/
 
 
 #define PENGUIN_CONTROL (0xBAADC0FEDEADBABEu)

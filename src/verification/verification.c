@@ -4,8 +4,6 @@
 
 #include "verification.h"
 
-static enum PtrState is_valid_ptr_(const void* ptr);
-
 enum PtrState
 {
     PTR_STATES_VALID   = 0,
@@ -94,6 +92,8 @@ enum StackError data_to_lX_str(const void* const data, const size_t size, char* 
 
 
 #ifndef NDEBUG
+
+static enum PtrState is_valid_ptr_(const void* ptr);
 
 IF_HASH(static uint64_t stack_hash_(const void* const elem, const size_t elem_size, 
                                     const size_t first_skip_size);)
@@ -330,8 +330,6 @@ static const char* handle_invalid_ptr_(const void* const check_ptr)
     return "MIPT SHIT";
 }
 
-#endif /*NDEBUG*/
-
 
 static enum PtrState is_valid_ptr_(const void* ptr)
 {
@@ -353,6 +351,12 @@ static enum PtrState is_valid_ptr_(const void* ptr)
 
     const ssize_t write_result = write(fd, ptr, 1);
 
+    if (remove(filename))
+    {
+        perror("Can't remove temp file");
+        return PTR_STATES_ERROR;
+    }
+
     if (close(fd))
     {
         perror("Can't close temp file");
@@ -373,3 +377,4 @@ static enum PtrState is_valid_ptr_(const void* ptr)
     return PTR_STATES_ERROR;
 }
 
+#endif /*NDEBUG*/

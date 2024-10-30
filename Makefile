@@ -63,7 +63,7 @@ lib$(PROJECT_NAME).a : $(OBJECTS_REL_PATH)
 	ar -rcs lib$(PROJECT_NAME).a $(OBJECTS_REL_PATH)
 
 $(BUILD_DIR)/%.o : $(SRC_DIR)/%.c |./$(BUILD_DIR)/ $(BUILD_DIRS) logger_build
-	@$(COMPILER) $(FLAGS) -I./libs -c -MMD -MP $< -o $@
+	$(COMPILER) $(FLAGS) -I./libs -c -MMD -MP $< -o $@
 
 -include $(DEPS_REL_PATH)
 

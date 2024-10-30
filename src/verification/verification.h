@@ -89,7 +89,7 @@ void stack_dumb_func_NOT_USE_(const stack_t* const stack, place_in_code_t place_
 
 #else  /*NDEBUG*/
 
-#define STACK_VERIFY(stack) do {} while (0)
+#define STACK_VERIFY(stack, elem_to_str) do {} while (0)
 
 #endif /*NDEBUG*/
 
