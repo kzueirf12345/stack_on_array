@@ -85,7 +85,6 @@ enum StackError stack_ctor_NOT_USE_(stack_key_t* const stack_num, const size_t e
         perror("Can't memcpy right PENGUIN");
         return STACK_ERROR_STANDARD_ERRNO;
     }
-    fprintf(stderr, "lol\n");
 #endif /*PENGUIN_PROTECT*/
 
     IF_HASH(stack_rehash_(stack);)
