@@ -151,7 +151,7 @@ enum StackError stack_pop (const stack_key_t* const stack_num, void* const elem)
     STACK_VERIFY(stack, NULL);
 
     lassert(stack->size > 0, "");
-    lassert(elem           , "");
+    // lassert(elem           , "");
 
     if (elem &&
         !memcpy(elem, (char*)stack->data + (stack->size - 1) * stack->elem_size, stack->elem_size))
