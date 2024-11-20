@@ -333,7 +333,7 @@ static const char* handle_invalid_ptr_(const void* const check_ptr)
 
 static enum PtrState is_valid_ptr_(const void* ptr)
 {
-    lassert(!errno, "");
+    lassert(!errno, "errno: %s", strerror(errno));
 
     if (ptr == NULL)
     {
