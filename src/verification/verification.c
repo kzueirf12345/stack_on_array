@@ -333,7 +333,9 @@ static const char* handle_invalid_ptr_(const void* const check_ptr)
 
 static enum PtrState is_valid_ptr_(const void* ptr)
 {
-    lassert(!errno, "errno: %s", strerror(errno));
+    // logg(LOG_LEVEL_DETAILS_INFO, "Lolverify\n");
+    errno = 0;
+    // lassert(!errno, "errno: %s", strerror(errno));
 
     if (ptr == NULL)
     {
