@@ -201,6 +201,15 @@ enum StackError stack_back(const stack_key_t stack_num, void* const elem)
     return STACK_ERROR_SUCCESS;
 }
 
+void* stack_get(const stack_key_t stack_num, const size_t ind)
+{
+    lassert(stack_num, "");
+    stack_t* const stack = (stack_t* const)(stack_num);
+    STACK_VERIFY(stack, NULL);
+
+    return (char*)stack->data + stack->elem_size * ind;
+}
+
 bool stack_is_empty(const stack_key_t stack_num)
 {
     lassert(stack_num, "");

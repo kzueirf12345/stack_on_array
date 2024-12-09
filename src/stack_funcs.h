@@ -44,6 +44,7 @@ void stack_dtor(stack_key_t* const stack_num);
 enum StackError stack_push(const stack_key_t* const stack_num, const void* const elem);
 enum StackError stack_pop (const stack_key_t* const stack_num, void* const elem);
 enum StackError stack_back(const stack_key_t stack_num, void* const elem);
+void*           stack_get (const stack_key_t stack_num, const size_t ind);
 
 bool stack_is_empty(const stack_key_t stack_num);
 size_t stack_size  (const stack_key_t stack_num);
