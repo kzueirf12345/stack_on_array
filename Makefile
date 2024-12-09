@@ -1,5 +1,5 @@
 .PHONY: all build clean logger_build logger_clean logger_rebuild \
-		clean_all clean_log clean_out clean_obj clean_deps clean_txt clean_bin
+		clean_all clean_log clean_out clean_obj clean_deps clean_txt clean_bin clean_a
 
 PROJECT_NAME = stack
 
@@ -84,9 +84,9 @@ logger_clean:
 
 
 
-clean_all: clean_obj clean_deps clean_out logger_clean
+clean_all: clean logger_clean
 
-clean: clean_obj clean_deps clean_out
+clean: clean_obj clean_deps clean_out clean_a
 
 clean_log:
 	rm -rf ./log/*.log
@@ -105,3 +105,6 @@ clean_txt:
 
 clean_bin:
 	rm -rf ./*.bin
+
+clean_a:
+	rm -rf ./*.a
