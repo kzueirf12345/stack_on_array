@@ -109,7 +109,7 @@ void stack_dtor(stack_key_t* const stack_num)
     free(stack->data); IF_DEBUG(stack->data = NULL;)
     free(stack);       IF_DEBUG(stack       = NULL;)
     
-    IF_DEBUG(*stack_num = 0;)
+    *stack_num = 0;
 }
 
 //=====================================================
