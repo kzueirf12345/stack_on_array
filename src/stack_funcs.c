@@ -210,6 +210,54 @@ void* stack_get(const stack_key_t stack_num, const size_t ind)
     return (char*)stack->data + stack->elem_size * ind;
 }
 
+void* stack_find(const stack_key_t stack_num, const void* const elem) 
+{
+    lassert(stack_num, "");
+    stack_t* const stack = (stack_t* const)(stack_num);
+    STACK_VERIFY(stack, NULL);
+    lassert(elem, "");
+
+    for (size_t ind = 0; ind < stack->size; ++ind)
+    {
+        if (memcmp((char*)stack->data + stack->elem_size * ind, elem, stack->elem_size) == 0)
+        {
+            return (char*)stack->data + stack->elem_size * ind;
+        }
+    }
+    return NULL;
+}
+
+#define STACK_ERROR_HANDLE_(call_func, ...)                                                         \
+    do {                                                                                            \
+        const enum StackError stack_error_handler = call_func;                                      \
+        if (stack_error_handler)                                                                    \
+        {                                                                                           \
+            fprintf(stderr, "Can't " #call_func". Stack error: %s\n",                               \
+                            stack_strerror(stack_error_handler));                                   \
+            __VA_ARGS__                                                                             \
+            return SIZE_MAX;                                                                        \
+        }                                                                                           \
+    } while(0)
+
+size_t stack_find_push(const stack_key_t* const stack_num, const void* const elem)
+{
+    lassert(stack_num, "");
+    stack_t* const stack = (stack_t* const)(*stack_num);
+    STACK_VERIFY(stack, NULL);
+    lassert(elem, "");
+
+    void* ans = NULL;
+    if ((ans = stack_find(*stack_num, elem)))
+    {
+        return (size_t)((char*)ans - (char*)stack->data) / stack->elem_size;
+    }
+
+    STACK_ERROR_HANDLE_(stack_push(stack_num, elem));
+
+    return stack->size - 1;
+}
+#undef STACK_ERROR_HANDLE_
+
 bool stack_is_empty(const stack_key_t stack_num)
 {
     lassert(stack_num, "");
