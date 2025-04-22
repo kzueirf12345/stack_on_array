@@ -201,6 +201,15 @@ enum StackError stack_back(const stack_key_t stack_num, void* const elem)
     return STACK_ERROR_SUCCESS;
 }
 
+void* stack_begin(const stack_key_t stack_num)
+{
+    lassert(stack_num, "");
+    stack_t* const stack = (stack_t* const)(stack_num);
+    STACK_VERIFY(stack, NULL);
+
+    return stack->data;
+}
+
 void* stack_get(const stack_key_t stack_num, const size_t ind)
 {
     lassert(stack_num, "");
@@ -210,7 +219,7 @@ void* stack_get(const stack_key_t stack_num, const size_t ind)
     return (char*)stack->data + stack->elem_size * ind;
 }
 
-void* stack_find(const stack_key_t stack_num, const void* const elem) 
+void* stack_find(const stack_key_t stack_num, const void* const elem, stack_cmp cmp) 
 {
     lassert(stack_num, "");
     stack_t* const stack = (stack_t* const)(stack_num);
@@ -219,9 +228,19 @@ void* stack_find(const stack_key_t stack_num, const void* const elem)
 
     for (size_t ind = 0; ind < stack->size; ++ind)
     {
-        if (memcmp((char*)stack->data + stack->elem_size * ind, elem, stack->elem_size) == 0)
+        if (!cmp)
         {
-            return (char*)stack->data + stack->elem_size * ind;
+            if (memcmp((char*)stack->data + stack->elem_size * ind, elem, stack->elem_size) == 0)
+            {
+                return (char*)stack->data + stack->elem_size * ind;
+            }
+        }
+        else
+        {
+            if (cmp((char*)stack->data + stack->elem_size * ind, elem) == 0)
+            {
+                return (char*)stack->data + stack->elem_size * ind;
+            }
         }
     }
     return NULL;
@@ -247,7 +266,7 @@ size_t stack_find_push(const stack_key_t* const stack_num, const void* const ele
     lassert(elem, "");
 
     void* ans = NULL;
-    if ((ans = stack_find(*stack_num, elem)))
+    if ((ans = stack_find(*stack_num, elem, NULL)))
     {
         return (size_t)((char*)ans - (char*)stack->data) / stack->elem_size;
     }

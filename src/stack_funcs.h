@@ -41,11 +41,14 @@ void stack_dumb_NOT_USE_(const stack_key_t stack_num, place_in_code_t place_in_c
 
 void stack_dtor(stack_key_t* const stack_num);
 
+typedef int(*stack_cmp)(const void* const first, const void* const second);
+
 enum StackError stack_push      (const stack_key_t* const stack_num, const void* const elem);
 enum StackError stack_pop       (const stack_key_t* const stack_num, void* const elem);
 enum StackError stack_back      (const stack_key_t stack_num, void* const elem);
+void*           stack_begin     (const stack_key_t stack_num);
 void*           stack_get       (const stack_key_t stack_num, const size_t ind);
-void*           stack_find      (const stack_key_t stack_num, const void* const elem);
+void*           stack_find      (const stack_key_t stack_num, const void* const elem, stack_cmp cmp);
 size_t          stack_find_push (const stack_key_t* const stack_num, const void* const elem);
 
 bool stack_is_empty(const stack_key_t stack_num);
