@@ -31,7 +31,9 @@ enum StackError stack_ctor_NOT_USE_(stack_key_t* const stack_num, const size_t e
     lassert(name, "");
     lassert(place_in_code.file, "");
     lassert(place_in_code.func, "");
-    lassert(place_in_code.line, "");    
+    lassert(place_in_code.line, "");   
+    (void)name;
+    (void)place_in_code; 
 
     stack_t* const stack = calloc(1, STACK_T_SIZE);
     if (!stack)
