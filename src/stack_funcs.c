@@ -118,7 +118,7 @@ void stack_dtor(stack_key_t* const stack_num)
 
 static enum StackError stack_resize_(stack_t* stack);
 
-enum StackError stack_push(const stack_key_t* const stack_num, const void* const elem)
+enum StackError stack_push(stack_key_t* const stack_num, const void* const elem)
 {
     lassert(stack_num, "");
     stack_t* const stack = (stack_t* const)(*stack_num);
@@ -146,7 +146,7 @@ enum StackError stack_push(const stack_key_t* const stack_num, const void* const
     return STACK_ERROR_SUCCESS;
 }
 
-enum StackError stack_pop (const stack_key_t* const stack_num, void* const elem)
+enum StackError stack_pop (stack_key_t* const stack_num, void* const elem)
 {
     lassert(stack_num, "");
     stack_t* const stack = (stack_t* const)(*stack_num);
@@ -260,7 +260,7 @@ void* stack_find(const stack_key_t stack_num, const void* const elem, stack_cmp 
         }                                                                                           \
     } while(0)
 
-size_t stack_find_push(const stack_key_t* const stack_num, const void* const elem)
+size_t stack_find_push(stack_key_t* const stack_num, const void* const elem)
 {
     lassert(stack_num, "");
     stack_t* const stack = (stack_t* const)(*stack_num);
@@ -295,6 +295,21 @@ size_t stack_size(const stack_key_t stack_num)
     STACK_VERIFY(stack, NULL);
 
     return stack->size;
+}
+
+enum StackError stack_clean(stack_key_t* const stack_num)
+{
+    lassert(stack_num, "");
+    stack_t* const stack = (stack_t* const)(*stack_num);
+    STACK_VERIFY(stack, NULL);
+
+    if (!memset(stack->data, 0, stack->elem_size * stack->size))
+    {
+        perror("Can't memset stack");
+        return STACK_ERROR_STANDARD_ERRNO;
+    }
+
+    return STACK_ERROR_SUCCESS;
 }
 
 //=====================================================
