@@ -3,6 +3,7 @@
 
 #include <memory.h>
 #include <sys/mman.h> 
+#include <stdbool.h>
 
 #include "verification/verification.h"
 
@@ -35,7 +36,7 @@ void stack_dumb_NOT_USE_(const stack_key_t stack_num, place_in_code_t place_in_c
         stack_ctor_NOT_USE_(stack_num, elem_size, start_capacity, #stack_num,                       \
                             (place_in_code_t){})
 
-#define STACK_DUMB(stack_num, elem_to_str) do {} while()
+#define STACK_DUMB(stack_num, elem_to_str) do {} while(false)
 
 #endif  /*NDEBUG*/
 
