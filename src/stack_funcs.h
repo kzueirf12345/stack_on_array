@@ -54,7 +54,8 @@ size_t          stack_find_push (      stack_key_t* const stack_num, const void*
 enum StackError stack_clean     (      stack_key_t* const stack_num);
 
 bool stack_is_empty(const stack_key_t stack_num);
-size_t stack_size  (const stack_key_t stack_num);
+size_t  stack_size  (const stack_key_t stack_num);
+size_t* stack_size_ptr  (const stack_key_t stack_num);
 
 //==================================================================================================
 

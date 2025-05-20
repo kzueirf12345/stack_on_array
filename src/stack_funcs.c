@@ -297,6 +297,15 @@ size_t stack_size(const stack_key_t stack_num)
     return stack->size;
 }
 
+size_t* stack_size_ptr  (const stack_key_t stack_num)
+{
+    lassert(stack_num, "");
+    stack_t* const stack = (stack_t* const)(stack_num);
+    STACK_VERIFY(stack, NULL);
+
+    return &stack->size;
+}
+
 enum StackError stack_clean(stack_key_t* const stack_num)
 {
     lassert(stack_num, "");
